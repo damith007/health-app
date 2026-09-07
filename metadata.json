@@ -1,0 +1,6 @@
+{
+  "name": "Chrono90",
+  "description": "Precision 24-hour timeline and 90-day execution sprint tracker with hourly slot status management and productivity analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
