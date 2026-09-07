@@ -22,9 +22,20 @@ jobs:
     - name: Grant Execute Permission for Gradle
       run: chmod +x gradlew || true
 
+    - name: Prepare Missing Config Files
+      run: |
+        # Create a dummy google-services.json if it doesn't exist to prevent plugin failure
+        if [ ! -f "app/google-services.json" ]; then
+          echo '{"project_info": {"project_number": "123456789", "project_id": "health-app"}, "client": [{"client_info": {"mobilesdk_app_id": "1:123:android:123"}, "oauth_client": [], "api_key": [{"current_key": "AIzaSyDummyKey"}], "services": {"analytics_service": {"status": 1}, "appinvite_service": {"status": 1, "other_platform_oauth_client": []}, "ads_service": {"status": 2}}}]}' > app/google-services.json
+        fi
+        
+        # Generate a default debug keystore if expected by the project root
+        if [ ! -f "debug.keystore" ]; then
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" || true
+        fi
+
     - name: Build Debug APK with XVFB
       run: |
-        # xvfb-run provides a virtual display so KSP's IntelliJ platform initializes successfully in headless CI
         if [ -f "gradlew" ]; then
           xvfb-run ./gradlew assembleDebug
         else
