@@ -51,6 +51,8 @@ import com.example.ui.theme.SurfaceDark
 @Composable
 fun ChronoTopHeader(
     currentTab: ChronoTab,
+    sprintDayTag: String = "D-14",
+    currentTimeLive: String? = null,
     onNotificationsClick: () -> Unit = {},
     onProfileClick: () -> Unit = {},
     unreadNotificationsCount: Int = 0,
@@ -101,12 +103,33 @@ fun ChronoTopHeader(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "D-42",
+                            text = sprintDayTag,
                             color = SecondaryGreen,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.5.sp
                         )
+                    }
+                    if (currentTimeLive != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(9999.dp))
+                                .background(Primary.copy(alpha = 0.15f))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                PulsingDot(color = Primary, sizeDp = 5)
+                                Text(
+                                    text = currentTimeLive,
+                                    color = Primary,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
                 Text(

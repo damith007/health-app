@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.TaskStatus
@@ -39,10 +41,13 @@ fun TodayGridScreen(
     dailySummary: DailySummary,
     displayDate: String,
     sprintDayInfo: String,
+    currentTimeLive: String = "16:15",
+    isToday: Boolean = true,
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
     onJumpToNow: () -> Unit,
     onSprintClick: () -> Unit = {},
+    onSeedTemplate: () -> Unit = {},
     onStatusToggle: (TimeSlotTask) -> Unit,
     onStatusSelect: (TimeSlotTask, TaskStatus) -> Unit,
     onTaskClick: (TimeSlotTask) -> Unit,
@@ -100,20 +105,34 @@ fun TodayGridScreen(
         // Timeline Items
         if (filteredTasks.isEmpty()) {
             item(key = "empty_state") {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 40.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 24.dp, vertical = 36.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
                         text = if (selectedCategoryFilter != null)
                             "No tasks found for $selectedCategoryFilter.\nTap 'All Slots' to reset filter."
                         else
-                            "No tasks scheduled for this day.\nTap + to add an hourly block.",
+                            "No schedule blocks logged for $displayDate.",
                         color = OnSurfaceVariant,
-                        fontSize = 14.sp
+                        fontSize = 13.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
+                    if (selectedCategoryFilter == null) {
+                        androidx.compose.material3.Button(
+                            onClick = onSeedTemplate,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = com.example.ui.theme.Primary,
+                                contentColor = com.example.ui.theme.OnPrimary
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text("Load Daily Architecture Schedule", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         } else {
@@ -126,12 +145,12 @@ fun TodayGridScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 ) {
-                    // Show NOW ACTIVE marker right before IN_PROGRESS task or around 16:00
+                    // Show NOW ACTIVE marker right before IN_PROGRESS task or current active hour
                     val isFirstInProgress = task.status == TaskStatus.IN_PROGRESS
-                    val isAfternoonActive = task.startHour >= 15 && (index == 0 || tasks[index - 1].startHour < 15)
-                    if (isFirstInProgress || (tasks.none { it.status == TaskStatus.IN_PROGRESS } && isAfternoonActive)) {
+                    val isCurrentSlot = isToday && (isFirstInProgress || (tasks.none { it.status == TaskStatus.IN_PROGRESS } && index == 0))
+                    if (isCurrentSlot) {
                         TimelineNowMarker(
-                            timeStr = "16:15",
+                            timeStr = currentTimeLive,
                             modifier = Modifier.padding(vertical = 2.dp)
                         )
                     }

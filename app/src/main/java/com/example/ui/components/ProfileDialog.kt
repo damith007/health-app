@@ -19,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -55,11 +58,15 @@ import com.example.ui.theme.OnSurface
 import com.example.ui.theme.OnSurfaceVariant
 import com.example.ui.theme.Outline
 import com.example.ui.theme.Primary
+import com.example.ui.theme.PrimaryContainer
 import com.example.ui.theme.SecondaryGreen
 import com.example.ui.theme.SurfaceContainer
 import com.example.ui.theme.SurfaceContainerHigh
 import com.example.ui.theme.SurfaceContainerHighest
 import com.example.ui.theme.TertiaryCyan
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 @Composable
 fun ProfileDialog(
@@ -69,6 +76,9 @@ fun ProfileDialog(
 ) {
     var name by remember { mutableStateOf(userProfile.name) }
     var email by remember { mutableStateOf(userProfile.email) }
+    var sprintGoalName by remember { mutableStateOf(userProfile.sprintGoalName) }
+    var sprintStartDate by remember { mutableStateOf(userProfile.sprintStartDate) }
+    var sprintTargetDays by remember { mutableIntStateOf(userProfile.sprintTargetDays) }
     var dailyTargetHours by remember { mutableFloatStateOf(userProfile.dailyTargetHours) }
     var chronotype by remember { mutableStateOf(userProfile.chronotype) }
     var hapticFeedback by remember { mutableStateOf(userProfile.hapticFeedback) }
@@ -204,6 +214,122 @@ fun ProfileDialog(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
+
+                // 90-Day Sprint Target & Start Date Configuration
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(SurfaceContainer)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Primary.copy(alpha = 0.2f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Flag,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "90-Day Sprint Goal Setting",
+                                color = OnSurface,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Define the overarching milestone & kickoff date",
+                                color = OnSurfaceVariant,
+                                fontSize = 10.sp
+                            )
+                        }
+                    }
+
+                    // Sprint Goal Name Input
+                    OutlinedTextField(
+                        value = sprintGoalName,
+                        onValueChange = { sprintGoalName = it },
+                        label = { Text("90-Day Goal Name / Sprint Theme", color = OnSurfaceVariant, fontSize = 11.sp) },
+                        placeholder = { Text("e.g., Launch SaaS MVP & 100 Paid Users", color = OnSurfaceVariant.copy(alpha = 0.5f), fontSize = 12.sp) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("profile_sprint_goal_name_input"),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = OnSurface,
+                            unfocusedTextColor = OnSurface,
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = Outline
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    // Sprint Start Date Input
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        OutlinedTextField(
+                            value = sprintStartDate,
+                            onValueChange = { sprintStartDate = it },
+                            label = { Text("Sprint Kickoff / Start Date (YYYY-MM-DD)", color = OnSurfaceVariant, fontSize = 11.sp) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarMonth,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("profile_sprint_start_date_input"),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = OnSurface,
+                                unfocusedTextColor = OnSurface,
+                                focusedBorderColor = Primary,
+                                unfocusedBorderColor = Outline
+                            ),
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        // Date Quick Presets
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val presetDates = listOf(
+                                "Today" to "2026-10-23",
+                                "Start of Oct" to "2026-10-01",
+                                "Quarter Start" to "2026-10-10"
+                            )
+                            presetDates.forEach { (label, dateVal) ->
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(if (sprintStartDate == dateVal) Primary.copy(alpha = 0.2f) else SurfaceContainerHighest)
+                                        .clickable { sprintStartDate = dateVal }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text(
+                                        text = label,
+                                        color = if (sprintStartDate == dateVal) Primary else OnSurfaceVariant,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
                 // Daily Focus Target Control
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -415,6 +541,9 @@ fun ProfileDialog(
                                 userProfile.copy(
                                     name = name.trim(),
                                     email = email.trim(),
+                                    sprintGoalName = sprintGoalName.trim().ifEmpty { "90-Day Sprint Objective" },
+                                    sprintStartDate = sprintStartDate.trim().ifEmpty { "2026-10-10" },
+                                    sprintTargetDays = sprintTargetDays,
                                     dailyTargetHours = dailyTargetHours,
                                     chronotype = chronotype,
                                     hapticFeedback = hapticFeedback,

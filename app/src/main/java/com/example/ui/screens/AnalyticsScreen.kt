@@ -77,6 +77,8 @@ import com.example.ui.theme.TertiaryCyan
 @Composable
 fun AnalyticsScreen(
     selectedRange: String,
+    analyticsData: com.example.data.model.RealtimeAnalytics = com.example.data.model.RealtimeAnalytics(),
+    analysisCards: List<com.example.ui.components.DeepAnalysisCard> = emptyList(),
     onRangeChange: (String) -> Unit,
     onFilterClick: () -> Unit = {},
     onExportClick: () -> Unit = {},
@@ -101,32 +103,32 @@ fun AnalyticsScreen(
 
         // 2. 4-Tile High Impact KPI Matrix
         item {
-            KpiMatrixSection()
+            KpiMatrixSection(analyticsData)
         }
 
         // 3. Circadian Chronotype Heatmap
         item {
-            CircadianHeatmapSection()
+            CircadianHeatmapSection(analyticsData)
         }
 
         // 4. Category Time Allocation Breakdown
         item {
-            CategoryAllocationSection()
+            CategoryAllocationSection(analyticsData)
         }
 
         // 5. Friction & Leakage Audit
         item {
-            FrictionAuditSection()
+            FrictionAuditSection(analyticsData)
         }
 
         // 6. 90-Day Trajectory Forecast
         item {
-            TrajectoryForecastSection()
+            TrajectoryForecastSection(analyticsData)
         }
 
         // 7. Deep Analysis & AI Recommendations
         item {
-            com.example.ui.components.DeepAnalysisSection()
+            com.example.ui.components.DeepAnalysisSection(analysisCards = analysisCards)
         }
 
         // 8. Footer Engine Badge
@@ -252,7 +254,7 @@ fun AnalyticsHeaderSection(
 }
 
 @Composable
-fun KpiMatrixSection() {
+fun KpiMatrixSection(analyticsData: com.example.data.model.RealtimeAnalytics) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -309,18 +311,21 @@ fun KpiMatrixSection() {
                         letterSpacing = 0.5.sp
                     )
 
+                    val focusHoursFormatted = if (analyticsData.focusLoggedHours % 1f == 0f) "${analyticsData.focusLoggedHours.toInt()}" else String.format(java.util.Locale.US, "%.1f", analyticsData.focusLoggedHours)
+                    val targetHoursFormatted = if (analyticsData.targetFocusHours % 1f == 0f) "${analyticsData.targetFocusHours.toInt()}h" else String.format(java.util.Locale.US, "%.1fh", analyticsData.targetFocusHours)
+
                     Row(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            text = "64.5",
+                            text = focusHoursFormatted,
                             color = OnSurface,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "/ 90h",
+                            text = "/ $targetHoursFormatted",
                             color = OnSurfaceVariant,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(bottom = 2.dp)
@@ -328,6 +333,7 @@ fun KpiMatrixSection() {
                     }
 
                     // Progress Track
+                    val focusProgress = if (analyticsData.targetFocusHours > 0) (analyticsData.focusLoggedHours / analyticsData.targetFocusHours).coerceIn(0f, 1f) else 0f
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -337,7 +343,7 @@ fun KpiMatrixSection() {
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(0.716f)
+                                .fillMaxWidth(focusProgress)
                                 .fillMaxHeight()
                                 .background(Primary)
                         )
@@ -384,7 +390,7 @@ fun KpiMatrixSection() {
                                 modifier = Modifier.size(12.dp)
                             )
                             Text(
-                                text = "4.2%",
+                                text = analyticsData.executionRateDelta,
                                 color = SecondaryGreen,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -400,18 +406,25 @@ fun KpiMatrixSection() {
                         letterSpacing = 0.5.sp
                     )
 
+                    val execFormatted = String.format(java.util.Locale.US, "%.1f%%", analyticsData.executionRatePct)
+                    val execRating = when {
+                        analyticsData.executionRatePct >= 80f -> "Elite"
+                        analyticsData.executionRatePct >= 65f -> "Solid"
+                        else -> "Needs Focus"
+                    }
+
                     Row(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "81.4%",
+                            text = execFormatted,
                             color = OnSurface,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Elite",
+                            text = execRating,
                             color = SecondaryGreen,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -503,7 +516,7 @@ fun KpiMatrixSection() {
                         horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            text = "86%",
+                            text = "${analyticsData.focusEfficiencyPct}%",
                             color = OnSurface,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
@@ -516,7 +529,9 @@ fun KpiMatrixSection() {
                         )
                     }
 
-                    // Segmented line (86% cyan, 14% dark)
+                    // Segmented line
+                    val purityWeight = (analyticsData.focusEfficiencyPct / 100f).coerceIn(0.05f, 1f)
+                    val remainingWeight = (1f - purityWeight).coerceAtLeast(0.01f)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -526,13 +541,13 @@ fun KpiMatrixSection() {
                     ) {
                         Box(
                             modifier = Modifier
-                                .weight(0.86f)
+                                .weight(purityWeight)
                                 .fillMaxHeight()
                                 .background(TertiaryCyan)
                         )
                         Box(
                             modifier = Modifier
-                                .weight(0.14f)
+                                .weight(remainingWeight)
                                 .fillMaxHeight()
                                 .background(OutlineVariant)
                         )
@@ -575,8 +590,8 @@ fun KpiMatrixSection() {
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Text(
-                                text = "-35% leak",
-                                color = SecondaryGreen,
+                                text = "${analyticsData.unplannedIncidents} gaps",
+                                color = if (analyticsData.unplannedIncidents == 0) SecondaryGreen else ErrorRose,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -592,8 +607,8 @@ fun KpiMatrixSection() {
                     )
 
                     Text(
-                        text = "4h 15m",
-                        color = ErrorRose,
+                        text = analyticsData.unplannedHoursStr,
+                        color = if (analyticsData.unplannedIncidents == 0) SecondaryGreen else ErrorRose,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -621,7 +636,7 @@ fun KpiMatrixSection() {
 }
 
 @Composable
-fun CircadianHeatmapSection() {
+fun CircadianHeatmapSection(analyticsData: com.example.data.model.RealtimeAnalytics) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -668,7 +683,7 @@ fun CircadianHeatmapSection() {
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "Day Owl",
+                        text = analyticsData.chronotypeName,
                         color = Primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold
@@ -706,7 +721,7 @@ fun CircadianHeatmapSection() {
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Peak Window: 09:00 - 12:30",
+                            text = "Peak Window: ${analyticsData.peakFocusWindow}",
                             color = OnSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
@@ -718,7 +733,7 @@ fun CircadianHeatmapSection() {
                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = "94%",
+                                text = "${analyticsData.peakFocusPercent}%",
                                 color = SecondaryGreen,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold
@@ -733,14 +748,25 @@ fun CircadianHeatmapSection() {
                 }
             }
 
-            // Grid of hours
-            val row1 = listOf("06:00" to 42, "07:00" to 58, "08:00" to 74, "09:00" to 96, "10:00" to 94, "11:00" to 92)
-            val row2 = listOf("12:00" to 81, "13:00" to 48, "14:00" to 68, "15:00" to 78, "16:00" to 70, "17:00" to 52)
-            val row3 = listOf("18:00" to 65, "19:00" to 72, "20:00" to 84, "21:00" to 59, "22:00" to 35, "23:00" to 20)
+            // Grid of hours from real hourly heat data
+            val defaultHourDensities = listOf(
+                "06:00" to 42, "07:00" to 58, "08:00" to 74, "09:00" to 96, "10:00" to 94, "11:00" to 92,
+                "12:00" to 81, "13:00" to 48, "14:00" to 68, "15:00" to 78, "16:00" to 70, "17:00" to 52,
+                "18:00" to 65, "19:00" to 72, "20:00" to 84, "21:00" to 59, "22:00" to 35, "23:00" to 20
+            )
+            val hourlyPairs = if (analyticsData.hourlyHeatmap.isNotEmpty()) {
+                analyticsData.hourlyHeatmap.map { it.hourLabel to it.densityPercent }
+            } else {
+                defaultHourDensities
+            }
 
-            HeatmapRow(row1)
-            HeatmapRow(row2)
-            HeatmapRow(row3)
+            val row1 = hourlyPairs.take(6)
+            val row2 = hourlyPairs.drop(6).take(6)
+            val row3 = hourlyPairs.drop(12).take(6)
+
+            if (row1.isNotEmpty()) HeatmapRow(row1)
+            if (row2.isNotEmpty()) HeatmapRow(row2)
+            if (row3.isNotEmpty()) HeatmapRow(row3)
 
             // Legend
             Row(
@@ -813,7 +839,7 @@ fun HeatmapRow(items: List<Pair<String, Int>>) {
 }
 
 @Composable
-fun CategoryAllocationSection() {
+fun CategoryAllocationSection(analyticsData: com.example.data.model.RealtimeAnalytics) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -834,8 +860,10 @@ fun CategoryAllocationSection() {
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
                     )
+                    val loggedFormatted = String.format(java.util.Locale.US, "%.1f", analyticsData.focusLoggedHours)
+                    val budgetFormatted = String.format(java.util.Locale.US, "%.1f", analyticsData.sprintTargetHours)
                     Text(
-                        text = "64.5 logged of 72.0h sprint budget",
+                        text = "$loggedFormatted logged of ${budgetFormatted}h sprint budget",
                         color = OnSurfaceVariant,
                         fontSize = 11.sp
                     )
@@ -855,65 +883,42 @@ fun CategoryAllocationSection() {
                 }
             }
 
-            // Multi-tone distribution bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(10.dp)
-                    .clip(RoundedCornerShape(9999.dp))
-                    .background(SurfaceContainerHighest)
-            ) {
-                Box(modifier = Modifier.weight(0.44f).fillMaxHeight().background(Primary))
-                Box(modifier = Modifier.weight(0.28f).fillMaxHeight().background(TertiaryCyan))
-                Box(modifier = Modifier.weight(0.16f).fillMaxHeight().background(SecondaryGreen))
-                Box(modifier = Modifier.weight(0.07f).fillMaxHeight().background(SurfaceBright))
-                Box(modifier = Modifier.weight(0.05f).fillMaxHeight().background(ErrorRose))
-            }
+            // Multi-tone distribution bar from categories
+            val categories = analyticsData.categoryBreakdowns
+            if (categories.isNotEmpty()) {
+                val totalPercent = categories.sumOf { it.percentage.toDouble() }.toFloat().coerceAtLeast(1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .clip(RoundedCornerShape(9999.dp))
+                        .background(SurfaceContainerHighest)
+                ) {
+                    categories.forEach { cat ->
+                        val weight = (cat.percentage / totalPercent).coerceAtLeast(0.02f)
+                        Box(
+                            modifier = Modifier
+                                .weight(weight)
+                                .fillMaxHeight()
+                                .background(cat.dotColor)
+                        )
+                    }
+                }
 
-            // Category detail items
-            CategoryItem(
-                dotColor = Primary,
-                title = "#Code & Architecture",
-                hours = "28.5h",
-                pct = "(44%)",
-                status = "On Track (+3.5h)",
-                budget = "Budget: 25.0h",
-                isPositive = true
-            )
-            CategoryItem(
-                dotColor = TertiaryCyan,
-                title = "#DeepWork & SaaS",
-                hours = "18.0h",
-                pct = "(28%)",
-                status = "Target Met",
-                budget = "Budget: 18.0h",
-                isPositive = true
-            )
-            CategoryItem(
-                dotColor = SecondaryGreen,
-                title = "#Health & Fitness",
-                hours = "10.5h",
-                pct = "(16%)",
-                status = "Steady pace",
-                budget = "Budget: 12.0h"
-            )
-            CategoryItem(
-                dotColor = SurfaceBright,
-                title = "#LifeOps & Mindset",
-                hours = "4.5h",
-                pct = "(7%)",
-                status = "Routine aligned",
-                budget = "Budget: 5.0h"
-            )
-            CategoryItem(
-                dotColor = ErrorRose,
-                title = "#Unplanned / Void",
-                hours = "3.0h",
-                pct = "(5%)",
-                status = "Flagged for evening retrospective",
-                budget = "Max: 2.0h",
-                isError = true
-            )
+                // Category detail items
+                categories.forEach { cat ->
+                    CategoryItem(
+                        dotColor = cat.dotColor,
+                        title = cat.name,
+                        hours = cat.hoursFormatted,
+                        pct = "(${cat.percentage}%)",
+                        status = cat.status,
+                        budget = cat.budget,
+                        isPositive = cat.isPositive,
+                        isError = cat.isError
+                    )
+                }
+            }
         }
     }
 }
@@ -995,7 +1000,7 @@ fun CategoryItem(
 }
 
 @Composable
-fun FrictionAuditSection() {
+fun FrictionAuditSection(analyticsData: com.example.data.model.RealtimeAnalytics) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1027,15 +1032,16 @@ fun FrictionAuditSection() {
                     )
                 }
 
+                val frictionImpact = if (analyticsData.unplannedIncidents > 0) "-${(analyticsData.unplannedHours * 3).toInt()}% Output" else "0% Leak"
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(9999.dp))
-                        .background(ErrorContainer.copy(alpha = 0.3f))
+                        .background(if (analyticsData.unplannedIncidents > 0) ErrorContainer.copy(alpha = 0.3f) else SecondaryContainer.copy(alpha = 0.2f))
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "-14% Output",
-                        color = ErrorRose,
+                        text = frictionImpact,
+                        color = if (analyticsData.unplannedIncidents > 0) ErrorRose else SecondaryGreen,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -1063,19 +1069,19 @@ fun FrictionAuditSection() {
                             letterSpacing = 0.5.sp
                         )
                         Text(
-                            text = "Social Rabbit Hole",
+                            text = analyticsData.topTimeLeakTitle,
                             color = OnSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "1h 45m (3 incidents)",
-                            color = ErrorRose,
+                            text = "${analyticsData.unplannedHoursStr} (${analyticsData.unplannedIncidents} incidents)",
+                            color = if (analyticsData.unplannedIncidents > 0) ErrorRose else SecondaryGreen,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Post-lunch trigger",
+                            text = if (analyticsData.unplannedIncidents > 0) "Post-lunch trigger" else "Zero leaks recorded",
                             color = OnSurfaceVariant,
                             fontSize = 10.sp
                         )
@@ -1102,8 +1108,9 @@ fun FrictionAuditSection() {
                             verticalAlignment = Alignment.Bottom,
                             horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
+                            val contextSwitchStr = String.format(java.util.Locale.US, "%.1f", analyticsData.contextSwitchesPerDay)
                             Text(
-                                text = "4.2",
+                                text = contextSwitchStr,
                                 color = OnSurface,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -1116,8 +1123,8 @@ fun FrictionAuditSection() {
                             )
                         }
                         Text(
-                            text = "Target < 3.0",
-                            color = ErrorRose,
+                            text = if (analyticsData.contextSwitchesPerDay <= 3.0f) "Within Target" else "Target < 3.0",
+                            color = if (analyticsData.contextSwitchesPerDay <= 3.0f) SecondaryGreen else ErrorRose,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -1166,7 +1173,7 @@ fun FrictionAuditSection() {
 }
 
 @Composable
-fun TrajectoryForecastSection() {
+fun TrajectoryForecastSection(analyticsData: com.example.data.model.RealtimeAnalytics) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1188,7 +1195,7 @@ fun TrajectoryForecastSection() {
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Paced for early completion at Day 86",
+                        text = "Paced for early completion at Day ${analyticsData.projectedCompletionDay}",
                         color = OnSurfaceVariant,
                         fontSize = 11.sp
                     )
@@ -1205,7 +1212,7 @@ fun TrajectoryForecastSection() {
                     ) {
                         Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(SecondaryGreen))
                         Text(
-                            text = "4 Days Ahead",
+                            text = "${analyticsData.daysAheadOfSchedule} Days Ahead",
                             color = SecondaryGreen,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
@@ -1264,11 +1271,11 @@ fun TrajectoryForecastSection() {
                         style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round, pathEffect = dashedEffect)
                     )
 
-                    // Current Point Marker (Day 14)
+                    // Current Point Marker
                     drawCircle(color = SecondaryGreen.copy(alpha = 0.3f), radius = 9.dp.toPx(), center = Offset(w * 0.45f, h * 0.5f))
                     drawCircle(color = SecondaryGreen, radius = 4.5.dp.toPx(), center = Offset(w * 0.45f, h * 0.5f))
 
-                    // Projected completion point (Day 86)
+                    // Projected completion point
                     drawCircle(color = TertiaryCyan, radius = 3.5.dp.toPx(), center = Offset(w * 0.88f, h * 0.12f))
                 }
             }
@@ -1281,7 +1288,7 @@ fun TrajectoryForecastSection() {
             ) {
                 Text("Day 1 (Start)", color = OnSurfaceVariant, fontSize = 9.sp)
                 Text("Day 14 (Now)", color = SecondaryGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                Text("Day 86 (Target Est.)", color = TertiaryCyan, fontSize = 9.sp)
+                Text("Day ${analyticsData.projectedCompletionDay} (Target Est.)", color = TertiaryCyan, fontSize = 9.sp)
                 Text("Day 90", color = OnSurfaceVariant, fontSize = 9.sp)
             }
 
@@ -1294,15 +1301,17 @@ fun TrajectoryForecastSection() {
             ) {
                 Column {
                     Text("Logged to Date", color = OnSurfaceVariant, fontSize = 10.sp)
-                    Text("128.5h", color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    val loggedTotal = String.format(java.util.Locale.US, "%.1fh", analyticsData.focusLoggedHours)
+                    Text(loggedTotal, color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
                     Text("Target Sprint", color = OnSurfaceVariant, fontSize = 10.sp)
-                    Text("810.0h", color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    val targetTotal = String.format(java.util.Locale.US, "%.1fh", analyticsData.sprintTargetHours)
+                    Text(targetTotal, color = OnSurface, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
                     Text("Forecast Finish", color = OnSurfaceVariant, fontSize = 10.sp)
-                    Text("Nov 28", color = SecondaryGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(analyticsData.forecastFinishDate, color = SecondaryGreen, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

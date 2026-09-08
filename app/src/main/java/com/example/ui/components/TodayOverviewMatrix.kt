@@ -401,14 +401,21 @@ fun DualMetricRow(
                             )
                         }
                     }
+                    val activeHoursFormatted = if (summary.activeHours % 1f == 0f) "${summary.activeHours.toInt()}h" else String.format(java.util.Locale.US, "%.1fh", summary.activeHours)
                     Text(
-                        text = "${summary.activeHours.toInt()}h active recorded",
+                        text = "$activeHoursFormatted active recorded",
                         color = OnSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
 
-                // Mini breakdown segmented line
+                // Mini breakdown segmented line with dynamic weights
+                val totalHours = (summary.activeHours + summary.missedHours + summary.wastedHours + summary.plannedHours).coerceAtLeast(0.1f)
+                val activeWeight = (summary.activeHours / totalHours).coerceAtLeast(0.01f)
+                val missedWeight = (summary.missedHours / totalHours).coerceAtLeast(0.01f)
+                val wastedWeight = (summary.wastedHours / totalHours).coerceAtLeast(0.01f)
+                val plannedWeight = (summary.plannedHours / totalHours).coerceAtLeast(0.01f)
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -418,27 +425,27 @@ fun DualMetricRow(
                 ) {
                     Box(
                         modifier = Modifier
-                            .weight(0.65f)
+                            .weight(activeWeight)
                             .fillMaxHeight()
                             .background(SecondaryGreen)
                     )
                     Box(
                         modifier = Modifier
-                            .weight(0.15f)
-                            .fillMaxHeight()
-                            .background(Primary)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(0.10f)
+                            .weight(missedWeight)
                             .fillMaxHeight()
                             .background(TertiaryCyan)
                     )
                     Box(
                         modifier = Modifier
-                            .weight(0.10f)
+                            .weight(wastedWeight)
                             .fillMaxHeight()
                             .background(ErrorRose)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(plannedWeight)
+                            .fillMaxHeight()
+                            .background(Primary)
                     )
                 }
             }
@@ -448,6 +455,10 @@ fun DualMetricRow(
 
 @Composable
 fun ExecutionStatusStrip(summary: DailySummary) {
+    fun formatHours(h: Float): String {
+        return if (h % 1f == 0f) "${h.toInt()}h" else String.format(java.util.Locale.US, "%.1fh", h)
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -458,25 +469,25 @@ fun ExecutionStatusStrip(summary: DailySummary) {
     ) {
         StatusCountCell(
             label = "Active",
-            hoursStr = "${summary.activeHours.toInt()}h",
+            hoursStr = formatHours(summary.activeHours),
             color = SecondaryGreen,
             modifier = Modifier.weight(1f)
         )
         StatusCountCell(
             label = "Missed",
-            hoursStr = "${summary.missedHours.toInt()}h",
+            hoursStr = formatHours(summary.missedHours),
             color = TertiaryCyan,
             modifier = Modifier.weight(1f)
         )
         StatusCountCell(
             label = "Wasted",
-            hoursStr = "${summary.wastedHours.toInt()}h",
+            hoursStr = formatHours(summary.wastedHours),
             color = ErrorRose,
             modifier = Modifier.weight(1f)
         )
         StatusCountCell(
             label = "Planned",
-            hoursStr = "${summary.plannedHours.toInt()}h",
+            hoursStr = formatHours(summary.plannedHours),
             color = Primary,
             modifier = Modifier.weight(1f)
         )

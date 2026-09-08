@@ -63,43 +63,47 @@ data class DeepAnalysisCard(
 
 @Composable
 fun DeepAnalysisSection(
+    analysisCards: List<DeepAnalysisCard> = emptyList(),
     modifier: Modifier = Modifier
 ) {
-    var expandedCardId by remember { mutableStateOf<String?>("card_1") }
-    var actionAppliedMap by remember { mutableStateOf(mapOf<String, Boolean>()) }
-
-    val cards = listOf(
-        DeepAnalysisCard(
-            id = "card_1",
-            title = "Circadian Peak Alignment",
-            headline = "09:00 - 12:30 Focus Purity at 94%",
-            impact = "+3.4x Higher Architecture Velocity",
-            recommendation = "Lock this 3.5-hour morning window against external meetings. Shift all asynchronous code reviews and administrative triage to post-16:30.",
-            icon = Icons.Default.Speed,
-            tag = "HIGH LEVERAGE",
-            themeColor = Primary
-        ),
-        DeepAnalysisCard(
-            id = "card_2",
-            title = "Friction Gap Remediation",
-            headline = "Post-Lunch Context Switch Detected (13:00 - 13:45)",
-            impact = "-1.75h Lost Cumulative Daily Output",
-            recommendation = "Schedule a deliberate 20-minute physical recovery walk or light cardio right at 13:15 to suppress dopamine seeking and social rabbit holes.",
-            icon = Icons.Default.TipsAndUpdates,
-            tag = "LEAK MITIGATION",
-            themeColor = TertiaryCyan
-        ),
-        DeepAnalysisCard(
-            id = "card_3",
-            title = "90-Day Horizon Pacing",
-            headline = "Day 14 Velocity exceeds target pace by 4.2%",
-            impact = "Estimated Sprint Completion: Day 86",
-            recommendation = "You have accumulated a 4-day buffer. Maintain current weekly volume without burnout escalation to guarantee a Q4 early finish.",
-            icon = Icons.Default.AutoAwesome,
-            tag = "PACE BUFFER",
-            themeColor = SecondaryGreen
+    val defaultCards = remember {
+        listOf(
+            DeepAnalysisCard(
+                id = "card_1",
+                title = "Circadian Peak Alignment",
+                headline = "09:00 - 12:30 Focus Purity at 94%",
+                impact = "+3.4x Higher Architecture Velocity",
+                recommendation = "Lock this 3.5-hour morning window against external meetings. Shift all asynchronous code reviews and administrative triage to post-16:30.",
+                icon = Icons.Default.Speed,
+                tag = "HIGH LEVERAGE",
+                themeColor = Primary
+            ),
+            DeepAnalysisCard(
+                id = "card_2",
+                title = "Friction Gap Remediation",
+                headline = "Post-Lunch Context Switch Detected (13:00 - 13:45)",
+                impact = "-1.75h Lost Cumulative Daily Output",
+                recommendation = "Schedule a deliberate 20-minute physical recovery walk or light cardio right at 13:15 to suppress dopamine seeking and social rabbit holes.",
+                icon = Icons.Default.TipsAndUpdates,
+                tag = "LEAK MITIGATION",
+                themeColor = TertiaryCyan
+            ),
+            DeepAnalysisCard(
+                id = "card_3",
+                title = "90-Day Horizon Pacing",
+                headline = "Day Velocity exceeds target pace by 4.2%",
+                impact = "Estimated Sprint Completion: Ahead of Schedule",
+                recommendation = "You have accumulated a solid buffer. Maintain current weekly volume without burnout escalation to guarantee a Q4 early finish.",
+                icon = Icons.Default.AutoAwesome,
+                tag = "PACE BUFFER",
+                themeColor = SecondaryGreen
+            )
         )
-    )
+    }
+
+    val cards = if (analysisCards.isNotEmpty()) analysisCards else defaultCards
+    var expandedCardId by remember(cards) { mutableStateOf<String?>(cards.firstOrNull()?.id) }
+    var actionAppliedMap by remember { mutableStateOf(mapOf<String, Boolean>()) }
 
     Box(
         modifier = modifier

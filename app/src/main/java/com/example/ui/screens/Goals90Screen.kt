@@ -279,13 +279,24 @@ fun GoalsHeaderSection(
             }
 
             // Overall sprint progress bar
+            val currentDay = sprintConfig?.currentDay ?: 14
+            val totalDays = (sprintConfig?.totalDays ?: 90).coerceAtLeast(1)
+            val progressFraction = (currentDay.toFloat() / totalDays.toFloat()).coerceIn(0f, 1f)
+            val daysRemaining = (totalDays - currentDay).coerceAtLeast(0)
+            val phaseTitle = sprintConfig?.phaseTitle ?: "Phase 1"
+
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Sprint Horizon", color = OnSurfaceVariant, fontSize = 10.sp)
-                    Text("14 / 90 Days (16d remaining in Phase 1)", color = Primary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "$currentDay / $totalDays Days (${daysRemaining}d remaining in $phaseTitle)",
+                        color = Primary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
                 Box(
                     modifier = Modifier
@@ -296,7 +307,7 @@ fun GoalsHeaderSection(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(14f / 90f)
+                            .fillMaxWidth(progressFraction)
                             .fillMaxHeight()
                             .background(Primary)
                     )

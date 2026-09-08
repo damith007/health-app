@@ -89,6 +89,11 @@ fun ChronoApp(viewModel: ChronoViewModel) {
     val showSprintEditDialog by viewModel.showSprintEditDialog.collectAsStateWithLifecycle()
     val sprintConfig by viewModel.sprintConfig.collectAsStateWithLifecycle()
 
+    val currentTimeLive by viewModel.currentTimeLive.collectAsStateWithLifecycle()
+    val selectedDate by viewModel.selectedDate.collectAsStateWithLifecycle()
+    val realtimeAnalytics by viewModel.realtimeAnalytics.collectAsStateWithLifecycle()
+    val deepAnalysisCards by viewModel.deepAnalysisCards.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -163,10 +168,13 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                         dailySummary = dailySummary,
                         displayDate = selectedDisplayDate,
                         sprintDayInfo = sprintDayInfo,
+                        currentTimeLive = currentTimeLive,
+                        isToday = selectedDate == "2026-10-23",
                         onPreviousDay = { viewModel.previousDay() },
                         onNextDay = { viewModel.nextDay() },
                         onJumpToNow = { viewModel.jumpToToday() },
                         onSprintClick = { viewModel.openSprintEditDialog() },
+                        onSeedTemplate = { viewModel.seedSampleDayTemplate() },
                         onStatusToggle = { viewModel.toggleTaskStatus(it) },
                         onStatusSelect = { task, status -> viewModel.setTaskStatus(task, status) },
                         onTaskClick = { viewModel.openEditTask(it) }
@@ -186,6 +194,8 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                 ChronoTab.ANALYTICS -> {
                     AnalyticsScreen(
                         selectedRange = analyticsRange,
+                        analyticsData = realtimeAnalytics,
+                        analysisCards = deepAnalysisCards,
                         onRangeChange = { viewModel.setAnalyticsRange(it) },
                         onFilterClick = { viewModel.openFilterDialog() },
                         onExportClick = { viewModel.openExportDialog() }
