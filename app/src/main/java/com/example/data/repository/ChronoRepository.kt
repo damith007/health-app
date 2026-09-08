@@ -29,8 +29,14 @@ class ChronoRepository(
     suspend fun deleteTask(task: TimeSlotTask) =
         taskDao.deleteTask(task)
 
+    suspend fun insertGoal(goal: GoalItem): Long =
+        goalDao.insertGoal(goal)
+
     suspend fun updateGoal(goal: GoalItem) =
         goalDao.updateGoal(goal)
+
+    suspend fun deleteGoal(goal: GoalItem) =
+        goalDao.deleteGoal(goal)
 
     suspend fun seedDefaultDataIfEmpty(defaultDate: String) {
         if (taskDao.getTaskCount() == 0) {

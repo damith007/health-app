@@ -52,6 +52,8 @@ import com.example.ui.theme.SurfaceDark
 fun ChronoTopHeader(
     currentTab: ChronoTab,
     onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {},
+    unreadNotificationsCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -118,33 +120,56 @@ fun ChronoTopHeader(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(
-                onClick = onNotificationsClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("notifications_button")
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Notifications,
-                    contentDescription = "Notifications",
-                    tint = OnSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
+            Box(contentAlignment = Alignment.TopEnd) {
+                IconButton(
+                    onClick = onNotificationsClick,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .testTag("notifications_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = if (unreadNotificationsCount > 0) Primary else OnSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                if (unreadNotificationsCount > 0) {
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp, end = 4.dp)
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(SecondaryGreen),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "$unreadNotificationsCount",
+                            color = Color.Black,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
+
             Box(
                 modifier = Modifier
-                    .size(32.dp)
+                    .size(34.dp)
                     .clip(CircleShape)
-                    .background(Primary),
+                    .background(Primary)
+                    .clickable { onProfileClick() }
+                    .testTag("profile_avatar_button"),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "User Profile",
                     tint = OnPrimary,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
         }

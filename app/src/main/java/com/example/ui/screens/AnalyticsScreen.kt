@@ -78,6 +78,8 @@ import com.example.ui.theme.TertiaryCyan
 fun AnalyticsScreen(
     selectedRange: String,
     onRangeChange: (String) -> Unit,
+    onFilterClick: () -> Unit = {},
+    onExportClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -91,7 +93,9 @@ fun AnalyticsScreen(
         item {
             AnalyticsHeaderSection(
                 selectedRange = selectedRange,
-                onRangeChange = onRangeChange
+                onRangeChange = onRangeChange,
+                onFilterClick = onFilterClick,
+                onExportClick = onExportClick
             )
         }
 
@@ -120,7 +124,12 @@ fun AnalyticsScreen(
             TrajectoryForecastSection()
         }
 
-        // 7. Footer Engine Badge
+        // 7. Deep Analysis & AI Recommendations
+        item {
+            com.example.ui.components.DeepAnalysisSection()
+        }
+
+        // 8. Footer Engine Badge
         item {
             FooterBadgeSection()
             Spacer(modifier = Modifier.height(96.dp))
@@ -131,7 +140,9 @@ fun AnalyticsScreen(
 @Composable
 fun AnalyticsHeaderSection(
     selectedRange: String,
-    onRangeChange: (String) -> Unit
+    onRangeChange: (String) -> Unit,
+    onFilterClick: () -> Unit = {},
+    onExportClick: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
@@ -177,7 +188,9 @@ fun AnalyticsHeaderSection(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceContainerHigh),
+                        .background(SurfaceContainerHigh)
+                        .clickable { onFilterClick() }
+                        .testTag("filter_metrics_button"),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -191,7 +204,9 @@ fun AnalyticsHeaderSection(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(SurfaceContainerHigh),
+                        .background(SurfaceContainerHigh)
+                        .clickable { onExportClick() }
+                        .testTag("export_report_button"),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(

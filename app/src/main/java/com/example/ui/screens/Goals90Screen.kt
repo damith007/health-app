@@ -21,12 +21,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,8 +59,24 @@ import com.example.ui.theme.TertiaryCyan
 fun Goals90Screen(
     goals: List<GoalItem>,
     onUpdateGoal: (GoalItem) -> Unit,
+    onSetNewGoal: () -> Unit,
+    onEditGoal: (GoalItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var selectedGoalCategory by remember { mutableStateOf<String?>(null) }
+
+    val filteredGoals = remember(goals, selectedGoalCategory) {
+        if (selectedGoalCategory == null) {
+            goals
+        } else {
+            goals.filter { it.category.equals(selectedGoalCategory, ignoreCase = true) }
+        }
+    }
+
+    val goalCategories = remember(goals) {
+        listOf("#DeepWork", "#Code", "#Fitness", "#Routine", "#Growth")
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -62,25 +85,56 @@ fun Goals90Screen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            GoalsHeaderSection()
+            GoalsHeaderSection(onSetNewGoal = onSetNewGoal)
         }
 
-        items(
-            items = goals,
-            key = { it.id }
-        ) { goal ->
-            GoalCardItem(
-                goal = goal,
-                onIncrement = {
-                    onUpdateGoal(goal.copy(currentValue = (goal.currentValue + 1).coerceAtMost(goal.targetValue)))
-                },
-                onDecrement = {
-                    onUpdateGoal(goal.copy(currentValue = (goal.currentValue - 1).coerceAtLeast(0)))
-                },
-                onToggleComplete = {
-                    onUpdateGoal(goal.copy(isCompleted = !goal.isCompleted))
-                }
+        // Category Filter Chips
+        item {
+            com.example.ui.components.TaskCategoryFilterBar(
+                selectedCategory = selectedGoalCategory,
+                onSelectCategory = { selectedGoalCategory = it },
+                categories = goalCategories,
+                modifier = Modifier.padding(horizontal = 0.dp)
             )
+        }
+
+        if (filteredGoals.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (selectedGoalCategory != null)
+                            "No goals found for $selectedGoalCategory.\nTap 'All Slots' to reset filter."
+                        else
+                            "No goals configured yet.\nTap 'Set Goal' to define a 90-day target.",
+                        color = OnSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                }
+            }
+        } else {
+            items(
+                items = filteredGoals,
+                key = { it.id }
+            ) { goal ->
+                GoalCardItem(
+                    goal = goal,
+                    onClick = { onEditGoal(goal) },
+                    onIncrement = {
+                        onUpdateGoal(goal.copy(currentValue = (goal.currentValue + 1).coerceAtMost(goal.targetValue)))
+                    },
+                    onDecrement = {
+                        onUpdateGoal(goal.copy(currentValue = (goal.currentValue - 1).coerceAtLeast(0)))
+                    },
+                    onToggleComplete = {
+                        onUpdateGoal(goal.copy(isCompleted = !goal.isCompleted))
+                    }
+                )
+            }
         }
 
         item {
@@ -90,7 +144,7 @@ fun Goals90Screen(
 }
 
 @Composable
-fun GoalsHeaderSection() {
+fun GoalsHeaderSection(onSetNewGoal: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,15 +191,23 @@ fun GoalsHeaderSection() {
                     }
                 }
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(9999.dp))
-                        .background(SecondaryContainer.copy(alpha = 0.2f))
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                Button(
+                    onClick = onSetNewGoal,
+                    modifier = Modifier.testTag("set_new_goal_button"),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = OnPrimary
+                    ),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Text(
-                        text = "15% Done",
-                        color = SecondaryGreen,
+                        text = "Set Goal",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -183,6 +245,7 @@ fun GoalsHeaderSection() {
 @Composable
 fun GoalCardItem(
     goal: GoalItem,
+    onClick: () -> Unit,
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onToggleComplete: () -> Unit
@@ -192,7 +255,9 @@ fun GoalCardItem(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(SurfaceContainer)
+            .clickable { onClick() }
             .padding(14.dp)
+            .testTag("goal_card_${goal.id}")
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
@@ -202,7 +267,8 @@ fun GoalCardItem(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     Box(
                         modifier = Modifier
@@ -232,25 +298,39 @@ fun GoalCardItem(
                         text = goal.title,
                         color = OnSurface,
                         fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(26.dp)
-                        .clip(CircleShape)
-                        .background(if (goal.isCompleted) SecondaryGreen else SurfaceContainerHighest)
-                        .clickable { onToggleComplete() },
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    if (goal.isCompleted) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Completed",
-                            tint = OnSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Goal",
+                        tint = OnSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(16.dp)
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .clip(CircleShape)
+                            .background(if (goal.isCompleted) SecondaryGreen else SurfaceContainerHighest)
+                            .clickable { onToggleComplete() }
+                            .testTag("goal_complete_toggle_${goal.id}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (goal.isCompleted) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Completed",
+                                tint = OnSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -289,7 +369,8 @@ fun GoalCardItem(
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(SurfaceContainerHigh)
-                            .clickable { onDecrement() },
+                            .clickable { onDecrement() }
+                            .testTag("goal_decrement_${goal.id}"),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -305,7 +386,8 @@ fun GoalCardItem(
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
                             .background(Primary.copy(alpha = 0.2f))
-                            .clickable { onIncrement() },
+                            .clickable { onIncrement() }
+                            .testTag("goal_increment_${goal.id}"),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

@@ -14,7 +14,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -45,6 +49,15 @@ fun TodayGridScreen(
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    var selectedCategoryFilter by remember { mutableStateOf<String?>(null) }
+
+    val filteredTasks = remember(tasks, selectedCategoryFilter) {
+        if (selectedCategoryFilter == null) {
+            tasks
+        } else {
+            tasks.filter { it.categoryTag.equals(selectedCategoryFilter, ignoreCase = true) }
+        }
+    }
 
     LazyColumn(
         state = listState,
@@ -74,8 +87,16 @@ fun TodayGridScreen(
             )
         }
 
+        // Quick Category Filter Bar
+        item(key = "category_filter_bar") {
+            com.example.ui.components.TaskCategoryFilterBar(
+                selectedCategory = selectedCategoryFilter,
+                onSelectCategory = { selectedCategoryFilter = it }
+            )
+        }
+
         // Timeline Items
-        if (tasks.isEmpty()) {
+        if (filteredTasks.isEmpty()) {
             item(key = "empty_state") {
                 Box(
                     modifier = Modifier
@@ -84,7 +105,10 @@ fun TodayGridScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tasks scheduled for this day.\nTap + to add an hourly block.",
+                        text = if (selectedCategoryFilter != null)
+                            "No tasks found for $selectedCategoryFilter.\nTap 'All Slots' to reset filter."
+                        else
+                            "No tasks scheduled for this day.\nTap + to add an hourly block.",
                         color = OnSurfaceVariant,
                         fontSize = 14.sp
                     )
@@ -92,7 +116,7 @@ fun TodayGridScreen(
             }
         } else {
             itemsIndexed(
-                items = tasks,
+                items = filteredTasks,
                 key = { _, item -> item.id }
             ) { index, task ->
                 Column(

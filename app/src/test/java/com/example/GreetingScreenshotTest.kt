@@ -2,6 +2,8 @@ package com.example
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
+import com.example.ui.ChronoTab
+import com.example.ui.components.ChronoTopHeader
 import com.example.ui.theme.MyApplicationTheme
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -21,8 +23,16 @@ class GreetingScreenshotTest {
 
   @Test
   fun greeting_screenshot() {
-    composeTestRule.setContent { MyApplicationTheme { Greeting("Robolectric") } }
+    composeTestRule.setContent {
+      MyApplicationTheme {
+        ChronoTopHeader(
+          currentTab = ChronoTab.TODAY_GRID,
+          unreadNotificationsCount = 2
+        )
+      }
+    }
 
     composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/greeting.png")
   }
 }
+

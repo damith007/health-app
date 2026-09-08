@@ -20,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,6 +27,11 @@ import com.example.ui.ChronoTab
 import com.example.ui.ChronoViewModel
 import com.example.ui.components.ChronoBottomNav
 import com.example.ui.components.ChronoTopHeader
+import com.example.ui.components.ExportReportDialog
+import com.example.ui.components.GoalEditDialog
+import com.example.ui.components.MetricFilterDialog
+import com.example.ui.components.NotificationDialog
+import com.example.ui.components.ProfileDialog
 import com.example.ui.components.TaskEditDialog
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.Goals90Screen
@@ -65,6 +69,20 @@ fun ChronoApp(viewModel: ChronoViewModel) {
     val showEditDialog by viewModel.showEditDialog.collectAsStateWithLifecycle()
     val editingTask by viewModel.editingTask.collectAsStateWithLifecycle()
 
+    val showGoalEditDialog by viewModel.showGoalEditDialog.collectAsStateWithLifecycle()
+    val editingGoal by viewModel.editingGoal.collectAsStateWithLifecycle()
+
+    val showProfileDialog by viewModel.showProfileDialog.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+
+    val showNotificationDialog by viewModel.showNotificationDialog.collectAsStateWithLifecycle()
+    val notifications by viewModel.notifications.collectAsStateWithLifecycle()
+    val unreadNotificationsCount by viewModel.unreadNotificationsCount.collectAsStateWithLifecycle()
+
+    val showExportDialog by viewModel.showExportDialog.collectAsStateWithLifecycle()
+    val showFilterDialog by viewModel.showFilterDialog.collectAsStateWithLifecycle()
+    val filterSettings by viewModel.filterSettings.collectAsStateWithLifecycle()
+
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -72,7 +90,9 @@ fun ChronoApp(viewModel: ChronoViewModel) {
         topBar = {
             ChronoTopHeader(
                 currentTab = currentTab,
-                onNotificationsClick = { /* no-op or info */ }
+                unreadNotificationsCount = unreadNotificationsCount,
+                onNotificationsClick = { viewModel.openNotificationDialog() },
+                onProfileClick = { viewModel.openProfileDialog() }
             )
         },
         bottomBar = {
@@ -82,23 +102,44 @@ fun ChronoApp(viewModel: ChronoViewModel) {
             )
         },
         floatingActionButton = {
-            if (currentTab == ChronoTab.TODAY_GRID) {
-                FloatingActionButton(
-                    onClick = { viewModel.openAddNewTask() },
-                    shape = RoundedCornerShape(16.dp),
-                    containerColor = Primary,
-                    contentColor = OnPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
-                    modifier = Modifier
-                        .padding(bottom = 12.dp)
-                        .testTag("add_task_fab")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add Task Block",
-                        modifier = Modifier.size(28.dp)
-                    )
+            when (currentTab) {
+                ChronoTab.TODAY_GRID -> {
+                    FloatingActionButton(
+                        onClick = { viewModel.openAddNewTask() },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = Primary,
+                        contentColor = OnPrimary,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
+                        modifier = Modifier
+                            .padding(bottom = 12.dp)
+                            .testTag("add_task_fab")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Task Block",
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
+                ChronoTab.GOALS_90 -> {
+                    FloatingActionButton(
+                        onClick = { viewModel.openSetNewGoal() },
+                        shape = RoundedCornerShape(16.dp),
+                        containerColor = Primary,
+                        contentColor = OnPrimary,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp),
+                        modifier = Modifier
+                            .padding(bottom = 12.dp)
+                            .testTag("set_goal_fab")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Set Sprint Goal",
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
+                else -> {}
             }
         },
         containerColor = SurfaceDark
@@ -127,13 +168,17 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                 ChronoTab.GOALS_90 -> {
                     Goals90Screen(
                         goals = goals,
-                        onUpdateGoal = { viewModel.updateGoal(it) }
+                        onUpdateGoal = { viewModel.updateGoal(it) },
+                        onSetNewGoal = { viewModel.openSetNewGoal() },
+                        onEditGoal = { viewModel.openEditGoal(it) }
                     )
                 }
                 ChronoTab.ANALYTICS -> {
                     AnalyticsScreen(
                         selectedRange = analyticsRange,
-                        onRangeChange = { viewModel.setAnalyticsRange(it) }
+                        onRangeChange = { viewModel.setAnalyticsRange(it) },
+                        onFilterClick = { viewModel.openFilterDialog() },
+                        onExportClick = { viewModel.openExportDialog() }
                     )
                 }
             }
@@ -145,6 +190,54 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                     onDismiss = { viewModel.dismissEditDialog() },
                     onSave = { viewModel.saveTask(it) },
                     onDelete = { viewModel.deleteTask(it) }
+                )
+            }
+
+            // Set / Edit Goal Dialog
+            if (showGoalEditDialog && editingGoal != null) {
+                GoalEditDialog(
+                    goal = editingGoal!!,
+                    onDismiss = { viewModel.dismissGoalEditDialog() },
+                    onSave = { viewModel.saveGoal(it) },
+                    onDelete = { viewModel.deleteGoal(it) }
+                )
+            }
+
+            // Profile & Settings Dialog
+            if (showProfileDialog) {
+                ProfileDialog(
+                    userProfile = userProfile,
+                    onDismiss = { viewModel.dismissProfileDialog() },
+                    onSaveProfile = { viewModel.updateUserProfile(it) }
+                )
+            }
+
+            // Notifications Dialog
+            if (showNotificationDialog) {
+                NotificationDialog(
+                    notifications = notifications,
+                    onDismiss = { viewModel.dismissNotificationDialog() },
+                    onMarkAllAsRead = { viewModel.markAllNotificationsRead() },
+                    onNotificationClick = { viewModel.markNotificationRead(it.id) },
+                    onClearAll = { viewModel.clearAllNotifications() }
+                )
+            }
+
+            // Export Sprint Report Dialog
+            if (showExportDialog) {
+                ExportReportDialog(
+                    selectedRange = analyticsRange,
+                    dailySummary = dailySummary,
+                    onDismiss = { viewModel.dismissExportDialog() }
+                )
+            }
+
+            // Metric Filter & Lenses Dialog
+            if (showFilterDialog) {
+                MetricFilterDialog(
+                    currentSettings = filterSettings,
+                    onDismiss = { viewModel.dismissFilterDialog() },
+                    onApply = { viewModel.applyFilterSettings(it) }
                 )
             }
         }

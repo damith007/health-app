@@ -40,10 +40,16 @@ interface GoalDao {
     fun getAllGoals(): Flow<List<GoalItem>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertGoal(goal: GoalItem): Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGoals(goals: List<GoalItem>)
 
     @Update
     suspend fun updateGoal(goal: GoalItem)
+
+    @Delete
+    suspend fun deleteGoal(goal: GoalItem)
 
     @Query("SELECT COUNT(*) FROM goals_90")
     suspend fun getGoalCount(): Int
