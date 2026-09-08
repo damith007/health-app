@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Chrono90"
+rootProject.name = "DTrack"
 
 include(":app")

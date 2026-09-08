@@ -26,7 +26,7 @@ jobs:
       run: |
         # Create a dummy google-services.json if it doesn't exist to prevent plugin failure
         if [ ! -f "app/google-services.json" ]; then
-          echo '{"project_info": {"project_number": "123456789", "project_id": "health-app"}, "client": [{"client_info": {"mobilesdk_app_id": "1:123:android:123"}, "oauth_client": [], "api_key": [{"current_key": "AIzaSyDummyKey"}], "services": {"analytics_service": {"status": 1}, "appinvite_service": {"status": 1, "other_platform_oauth_client": []}, "ads_service": {"status": 2}}}]}' > app/google-services.json
+          echo '{"project_info": {"project_number": "123456789012", "project_id": "dtrack-app"}, "client": [{"client_info": {"mobilesdk_app_id": "1:123456789012:android:123", "android_client_info": {"package_name": "com.aistudio.chrono90.kztmwa"}}, "oauth_client": [], "api_key": [{"current_key": "AIzaSyDummyKey"}], "services": {"analytics_service": {"status": 1}}}]}' > app/google-services.json
         fi
         
         # Generate a default debug keystore if expected by the project root
@@ -45,7 +45,7 @@ jobs:
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: health-app-debug
+        name: dtrack-apk-debug
         path: |
           app/build/outputs/apk/debug/*.apk
           build/outputs/apk/debug/*.apk

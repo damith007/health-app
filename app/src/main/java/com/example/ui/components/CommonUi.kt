@@ -86,7 +86,7 @@ fun ChronoTopHeader(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Chrono90",
+                        text = "DTrack",
                         color = OnSurface,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,

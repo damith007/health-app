@@ -1317,7 +1317,7 @@ fun FooterBadgeSection() {
         }
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = "CHRONO90 PRECISION ENGINE • SPRINT VERIFIED",
+            text = "DTRACK PRECISION ENGINE • SPRINT VERIFIED",
             color = OnSurfaceVariant,
             fontSize = 9.sp,
             fontWeight = FontWeight.SemiBold,

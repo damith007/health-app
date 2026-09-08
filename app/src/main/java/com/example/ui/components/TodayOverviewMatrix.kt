@@ -131,7 +131,7 @@ fun SprintBannerCard() {
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "Chrono90 Sprint",
+                        text = "DTrack Sprint",
                         color = OnSurface,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
