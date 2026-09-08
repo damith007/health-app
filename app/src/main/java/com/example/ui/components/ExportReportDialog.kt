@@ -48,6 +48,9 @@ import com.example.ui.DailySummary
 import com.example.ui.theme.OnPrimary
 import com.example.ui.theme.OnSurface
 import com.example.ui.theme.OnSurfaceVariant
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.example.ui.theme.Primary
 import com.example.ui.theme.PrimaryContainer
 import com.example.ui.theme.SecondaryContainer
@@ -322,76 +325,71 @@ private fun generateExportReport(
     range: String,
     summary: DailySummary
 ): String {
+    val currentDay = summary.sprintDay
+    val totalDays = summary.totalSprintDays
+    val cycle = summary.sprintCycle
+    val phase = summary.sprintPhase
+    val score = summary.dailyScorePercent
+    val nowFormatted = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date())
+
     return when (format) {
         ExportFormat.MARKDOWN -> """
-# DTrack Sprint Performance Audit
-**Horizon:** $range | **Cycle:** Phase 1 (Day 14 / 90)
-**Generated:** 2026-10-23T16:15:00Z
+# Sprint Performance Audit
+**Horizon:** $range | **Cycle:** $phase (Day $currentDay / $totalDays)
+**Generated:** $nowFormatted
 
 ## Summary Key Metrics
-- **Active Deep Work:** ${summary.activeHours}h (Logged)
-- **Planned Budget:** ${summary.plannedHours}h
-- **Execution Rate:** 81.4% (Elite status)
-- **Focus Purity:** 86%
-- **Time Leakage:** 4h 15m (-35% vs benchmark)
+- **Active Focus Logged:** ${summary.activeHours}h
+- **Planned Allocation:** ${summary.plannedHours}h
+- **Unplanned / Leaks:** ${summary.wastedHours}h
+- **Missed / Rescheduled:** ${summary.missedHours}h
+- **Execution Score:** $score%
 
-## Circadian Chronotype Alignment
-- **Chronotype Profile:** Day Owl (09:00 - 12:30 Peak)
-- **Peak Output Density:** 94% architecture velocity
-- **Top Leak Flagged:** Social Rabbit Hole (1h 45m, post-lunch trigger)
-
-## 90-Day Trajectory
-- **Projected Completion:** Day 86 (+4 days ahead of schedule)
-- **Sprint Forecast Finish:** Nov 28, 2026
+## Sprint Trajectory
+- **Current Day:** Day $currentDay of $totalDays
+- **Sprint Phase:** $phase (Cycle $cycle)
+- **Status:** ${summary.sprintStatus}
         """.trimIndent()
 
         ExportFormat.JSON -> """
 {
-  "dtrack_version": "1.4.0",
   "audit_range": "$range",
-  "sprint_day": 14,
-  "total_sprint_days": 90,
+  "sprint_day": $currentDay,
+  "total_sprint_days": $totalDays,
+  "sprint_cycle": $cycle,
+  "sprint_phase": "$phase",
   "metrics": {
     "active_hours": ${summary.activeHours},
     "missed_hours": ${summary.missedHours},
     "wasted_hours": ${summary.wastedHours},
     "planned_hours": ${summary.plannedHours},
-    "execution_rate_pct": 81.4,
-    "focus_purity_pct": 86.0
+    "execution_score_pct": $score
   },
-  "trajectory": {
-    "status": "AHEAD_OF_PACE",
-    "days_delta": 4,
-    "forecast_completion_day": 86,
-    "projected_finish_date": "2026-11-28"
-  },
-  "top_friction": "Social Rabbit Hole (1h 45m)"
+  "status": "${summary.sprintStatus}"
 }
         """.trimIndent()
 
         ExportFormat.CSV -> """
-Metric,Value,Benchmark,Delta,Unit
-Active Deep Work,${summary.activeHours},12.0,+2.0,Hours
-Planned Focus,${summary.plannedHours},8.0,-1.0,Hours
-Execution Rate,81.4,75.0,+6.4,%
-Focus Efficiency,86.0,80.0,+6.0,%
-Unplanned Void,4.25,6.50,-2.25,Hours
-Sprint Pacing,86,90,-4,Days
+Metric,Value,Unit
+Active Focus,${summary.activeHours},Hours
+Planned Focus,${summary.plannedHours},Hours
+Unplanned Leaks,${summary.wastedHours},Hours
+Missed Slots,${summary.missedHours},Hours
+Execution Score,$score,%
+Sprint Day,$currentDay,Days
         """.trimIndent()
 
         ExportFormat.EXECUTIVE_BRIEF -> """
-DTRACK EXECUTIVE BRIEF: $range
+EXECUTIVE PERFORMANCE BRIEF: $range
 ========================================
-STATUS: GREEN / MOMENTUM CONFIRMED
-Day 14 of 90 • Cycle 1 Foundation
+STATUS: ${summary.sprintStatus.uppercase()}
+Day $currentDay of $totalDays • $phase
 
 Key Highlights:
-1. 81.4% execution rate achieved (+4.2% week-over-week).
-2. Deep work logged: ${summary.activeHours}h vs target pace.
-3. System on track for early sprint completion at Day 86 (+4 days ahead).
-4. Friction audit identified 1h 45m post-lunch slip; intervention active.
-
-Recommendation: Maintain 09:00-12:30 deep architecture block lock.
+1. $score% execution score logged for current horizon.
+2. Active focus logged: ${summary.activeHours}h (Planned: ${summary.plannedHours}h).
+3. Unplanned leakage restricted to ${summary.wastedHours}h.
+4. Sprint Cycle $cycle active.
         """.trimIndent()
     }
 }

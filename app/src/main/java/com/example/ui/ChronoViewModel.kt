@@ -84,18 +84,39 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
 
     private val currentCalendar = Calendar.getInstance()
 
+    fun isDateToday(dateStr: String): Boolean = dateStr == dateFormat.format(Date())
+
+    private fun calculateSprintDayFromDate(startDateStr: String, totalDays: Int = 90): Int {
+        return try {
+            val startDate = dateFormat.parse(startDateStr) ?: Date()
+            val todayStr = dateFormat.format(Date())
+            val today = dateFormat.parse(todayStr) ?: Date()
+            val diffMillis = today.time - startDate.time
+            val days = (diffMillis / (1000 * 60 * 60 * 24)).toInt() + 1
+            days.coerceIn(1, totalDays)
+        } catch (e: Exception) {
+            1
+        }
+    }
+
     // Real-time ticking clock
     private val _currentTimeLive = MutableStateFlow(liveTimeFormat.format(Date()))
     val currentTimeLive: StateFlow<String> = _currentTimeLive.asStateFlow()
 
     private fun loadPersistedSprintConfig(): SprintConfig {
+        val todayStr = dateFormat.format(Date())
+        val savedStartDate = prefs.getString("user_sprint_start_date", todayStr) ?: todayStr
+        val savedTotalDays = prefs.getInt("sprint_total_days", 90)
+        val calculatedDay = calculateSprintDayFromDate(savedStartDate, savedTotalDays)
+        val defaultCycle = ((calculatedDay - 1) / 30) + 1
+
         return SprintConfig(
-            currentDay = prefs.getInt("sprint_day", 14),
-            totalDays = prefs.getInt("sprint_total_days", 90),
-            cycle = prefs.getInt("sprint_cycle", 1),
-            status = prefs.getString("sprint_status", "On Track") ?: "On Track",
+            currentDay = prefs.getInt("sprint_day", calculatedDay),
+            totalDays = savedTotalDays,
+            cycle = prefs.getInt("sprint_cycle", defaultCycle),
+            status = prefs.getString("sprint_status", "Active") ?: "Active",
             targetPercent = prefs.getInt("sprint_target_percent", 100),
-            phaseTitle = prefs.getString("sprint_phase", "Phase 1: Foundation") ?: "Phase 1: Foundation"
+            phaseTitle = prefs.getString("sprint_phase", "Phase $defaultCycle Execution") ?: "Phase $defaultCycle Execution"
         )
     }
 
@@ -106,11 +127,11 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
     val showSprintEditDialog: StateFlow<Boolean> = _showSprintEditDialog.asStateFlow()
 
     // Selected Date for Today Grid
-    private val initialDateStr = "2026-10-23"
+    private val initialDateStr = dateFormat.format(Date())
     private val _selectedDate = MutableStateFlow(initialDateStr)
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
 
-    private val _selectedDisplayDate = MutableStateFlow("Wed, Oct 23")
+    private val _selectedDisplayDate = MutableStateFlow(displayDateFormat.format(Date()))
     val selectedDisplayDate: StateFlow<String> = _selectedDisplayDate.asStateFlow()
 
     private val _sprintDayInfo = MutableStateFlow(
@@ -153,41 +174,25 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         listOf(
             NotificationItem(
                 id = "notif_1",
-                title = "15:30 Slot In Progress",
-                message = "System Stress Testing & Bug Bounty running on cluster 04.",
-                timeAgo = "12m ago",
-                type = NotificationType.SLOT_ACTIVE,
+                title = "Active Sprint Tracker",
+                message = "Sprint schedule and daily blocks synchronized with live clock.",
+                timeAgo = "Just now",
+                type = NotificationType.CIRCADIAN_FLOW,
                 isRead = false
             ),
             NotificationItem(
                 id = "notif_2",
-                title = "Sprint Milestone Achieved",
-                message = "81.4% execution rate reached today (+4.2% vs previous cycle).",
+                title = "Focus Quota Initialized",
+                message = "Daily target hours ready for real-time tracking.",
                 timeAgo = "1h ago",
                 type = NotificationType.SPRINT_MILESTONE,
                 isRead = false
             ),
             NotificationItem(
                 id = "notif_3",
-                title = "Phase 1 Foundation Countdown",
-                message = "16 days remaining in Cycle 1 of 90-day sprint.",
+                title = "Recovery & Rest Protocol",
+                message = "Optimal circadian wind-down recommended in the evening.",
                 timeAgo = "3h ago",
-                type = NotificationType.CIRCADIAN_FLOW,
-                isRead = false
-            ),
-            NotificationItem(
-                id = "notif_4",
-                title = "Distraction Block Recorded",
-                message = "45m unplanned gap logged at 13:00. Focus quota adjusted.",
-                timeAgo = "5h ago",
-                type = NotificationType.LEAK_WARNING,
-                isRead = true
-            ),
-            NotificationItem(
-                id = "notif_5",
-                title = "Recovery Suggestion",
-                message = "Evening Zone-2 walk scheduled at 18:30. Hydrate well.",
-                timeAgo = "6h ago",
                 type = NotificationType.RECOVERY_PROMPT,
                 isRead = true
             )
@@ -286,23 +291,33 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         range: String,
         sprint: SprintConfig
     ): RealtimeAnalytics {
+        val currentSprintDay = sprint.currentDay
+        val totalSprintDays = sprint.totalDays
+        val targetDailyH = _userProfile.value.dailyTargetHours.coerceAtLeast(1.0f)
+        val targetSprintH = totalSprintDays * targetDailyH
+
         if (allTasks.isEmpty()) {
             return RealtimeAnalytics(
+                currentSprintDay = currentSprintDay,
+                totalSprintDays = totalSprintDays,
                 focusLoggedHours = 0f,
-                targetFocusHours = 90f,
+                targetFocusHours = currentSprintDay * targetDailyH,
                 executionRatePct = 0f,
+                executionRateDelta = "0.0%",
                 focusEfficiencyPct = 0,
                 unplannedHours = 0f,
                 unplannedIncidents = 0,
                 daysAheadOfSchedule = 0,
-                projectedCompletionDay = sprint.totalDays,
-                forecastFinishDate = "In 90 Days",
+                projectedCompletionDay = totalSprintDays,
+                forecastFinishDate = "Day $totalSprintDays",
                 chronotypeName = "Day Owl",
                 peakFocusWindow = "09:00 - 12:30",
-                peakFocusPercent = 94,
-                topTimeLeakTitle = "None Recorded",
-                contextSwitchesPerDay = 1.0f,
-                sprintTargetHours = 810.0f
+                peakFocusPercent = 0,
+                topTimeLeakTitle = "Zero Leaks",
+                contextSwitchesPerDay = 0f,
+                sprintTargetHours = targetSprintH,
+                categoryBreakdowns = emptyList(),
+                hourlyHeatmap = emptyList()
             )
         }
 
@@ -316,7 +331,7 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         val categoryMinutes = mutableMapOf<String, Int>()
 
         for (task in allTasks) {
-            val dur = ((task.endHour * 60 + task.endMinute) - (task.startHour * 60 + task.startMinute)).coerceAtLeast(30)
+            val dur = ((task.endHour * 60 + task.endMinute) - (task.startHour * 60 + task.startMinute)).coerceAtLeast(15)
             val cat = if (task.categoryTag.isNotBlank()) task.categoryTag else "#General"
 
             when (task.status) {
@@ -342,34 +357,47 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
 
-        val totalActiveHours = totalActiveMinutes / 60f
-        val totalWastedHours = totalWastedMinutes / 60f
+        val totalActiveHours = Math.round((totalActiveMinutes / 60f) * 10) / 10f
+        val totalWastedHours = Math.round((totalWastedMinutes / 60f) * 10) / 10f
         val recordedTotalHours = totalActiveHours + totalWastedHours + (totalMissedMinutes / 60f)
 
         val execRate = if (recordedTotalHours > 0f) {
             ((totalActiveHours / recordedTotalHours) * 100f).coerceIn(0f, 100f)
-        } else 81.4f
+        } else 0f
 
         val efficiency = if (totalActiveHours + totalWastedHours > 0f) {
             ((totalActiveHours / (totalActiveHours + totalWastedHours)) * 100).toInt().coerceIn(0, 100)
-        } else 86
+        } else 0
 
-        // Build hourly heatmap list
+        // Build hourly heatmap list from actual counts
         val maxCount = hourlyCounts.maxOrNull()?.coerceAtLeast(1) ?: 1
         val heatmapList = (6..23).map { h ->
             val count = hourlyCounts[h]
-            val pct = if (count > 0) ((count.toFloat() / maxCount) * 85 + 15).toInt().coerceIn(15, 98) else (20 + (h * 3) % 40)
+            val pct = if (count > 0) ((count.toFloat() / maxCount) * 100).toInt().coerceIn(10, 100) else 0
             HourlyDensity(
                 hourLabel = String.format(Locale.US, "%02d:00", h),
                 densityPercent = pct
             )
         }
 
-        // Build category breakdowns
+        // Peak focus window from hourly distribution
+        var peakStartHour = 9
+        var peakMaxCount = 0
+        for (h in 6..20) {
+            val windowCount = hourlyCounts[h] + (if (h + 1 < 24) hourlyCounts[h + 1] else 0)
+            if (windowCount > peakMaxCount) {
+                peakMaxCount = windowCount
+                peakStartHour = h
+            }
+        }
+        val peakWindowStr = String.format(Locale.US, "%02d:00 - %02d:30", peakStartHour, (peakStartHour + 3).coerceAtMost(23))
+        val peakPct = if (totalActiveHours > 0) ((peakMaxCount.toFloat() / allTasks.size.coerceAtLeast(1)) * 100).toInt().coerceIn(10, 100) else 0
+
+        // Build category breakdowns from real logged categories
         val totalCatMins = categoryMinutes.values.sum().coerceAtLeast(1)
         val defaultColors = listOf(Primary, TertiaryCyan, SecondaryGreen, SurfaceBright, ErrorRose)
         val breakdowns = categoryMinutes.entries.mapIndexed { index, entry ->
-            val catHours = entry.value / 60f
+            val catHours = Math.round((entry.value / 60f) * 10) / 10f
             val pct = ((entry.value.toFloat() / totalCatMins) * 100).toInt()
             val color = defaultColors[index % defaultColors.size]
             val isErr = entry.key.contains("Unplanned", ignoreCase = true)
@@ -379,43 +407,49 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
                 hours = catHours,
                 percentage = pct,
                 dotColor = color,
-                status = if (isErr) "Flagged for review" else if (isPos) "On Track" else "Steady pace",
-                budget = "Budget: ${(catHours * 1.1f).toInt()}h",
+                status = if (isErr) "Flagged Leak" else if (isPos) "High Leverage" else "Logged pace",
+                budget = "Budget: ${(catHours * 1.2f).toInt()}h",
                 isPositive = isPos,
                 isError = isErr
             )
         }.sortedByDescending { it.hours }
 
-        val targetSprintH = sprint.totalDays * 9.0f
-        val daysAhead = if (execRate >= 75f) 4 else 0
-        val projectedComp = (sprint.totalDays - daysAhead).coerceAtLeast(1)
+        val targetSoFar = Math.round((currentSprintDay * targetDailyH) * 10) / 10f
+        val hoursAhead = totalActiveHours - targetSoFar
+        val daysAhead = (hoursAhead / targetDailyH).toInt()
+
+        val dailyPace = if (currentSprintDay > 0) totalActiveHours / currentSprintDay else 0f
+        val projectedComp = if (dailyPace > 0) (targetSprintH / dailyPace).toInt().coerceIn(1, totalSprintDays + 30) else totalSprintDays
+
+        val finishCal = Calendar.getInstance()
+        val forecastFinishStr = try {
+            finishCal.time = dateFormat.parse(_userProfile.value.sprintStartDate) ?: Date()
+            finishCal.add(Calendar.DAY_OF_YEAR, projectedComp)
+            displayDateFormat.format(finishCal.time)
+        } catch (e: Exception) {
+            "Day $projectedComp"
+        }
 
         return RealtimeAnalytics(
-            focusLoggedHours = totalActiveHours.coerceAtLeast(64.5f),
-            targetFocusHours = (sprint.currentDay * 6.5f).coerceAtLeast(90f),
+            currentSprintDay = currentSprintDay,
+            totalSprintDays = totalSprintDays,
+            focusLoggedHours = totalActiveHours,
+            targetFocusHours = targetSoFar,
             executionRatePct = execRate,
-            executionRateDelta = "+4.2%",
+            executionRateDelta = if (daysAhead >= 0) "+$daysAhead d" else "$daysAhead d",
             focusEfficiencyPct = efficiency,
-            unplannedHours = totalWastedHours.coerceAtLeast(1.5f),
-            unplannedIncidents = wastedCount.coerceAtLeast(1),
+            unplannedHours = totalWastedHours,
+            unplannedIncidents = wastedCount,
             daysAheadOfSchedule = daysAhead,
             projectedCompletionDay = projectedComp,
-            forecastFinishDate = "Nov 28",
-            chronotypeName = "Day Owl",
-            peakFocusWindow = "09:00 - 12:30",
-            peakFocusPercent = 94,
-            topTimeLeakTitle = if (wastedCount > 0) "Social Rabbit Hole" else "Zero Leaks",
-            contextSwitchesPerDay = 4.2f,
+            forecastFinishDate = forecastFinishStr,
+            chronotypeName = _userProfile.value.chronotype.substringBefore(" ("),
+            peakFocusWindow = peakWindowStr,
+            peakFocusPercent = peakPct,
+            topTimeLeakTitle = if (wastedCount > 0) "Context Switch / Unplanned Gap" else "Zero Leaks",
+            contextSwitchesPerDay = if (currentSprintDay > 0) (wastedCount.toFloat() / currentSprintDay) else 0f,
             sprintTargetHours = targetSprintH,
-            categoryBreakdowns = breakdowns.ifEmpty {
-                listOf(
-                    CategoryBreakdown("#Code & Architecture", 28.5f, 44, Primary, "On Track (+3.5h)", "Budget: 25.0h", isPositive = true),
-                    CategoryBreakdown("#DeepWork & SaaS", 18.0f, 28, TertiaryCyan, "Target Met", "Budget: 18.0h", isPositive = true),
-                    CategoryBreakdown("#Health & Fitness", 10.5f, 16, SecondaryGreen, "Steady pace", "Budget: 12.0h"),
-                    CategoryBreakdown("#LifeOps & Mindset", 4.5f, 7, SurfaceBright, "Routine aligned", "Budget: 5.0h"),
-                    CategoryBreakdown("#Unplanned / Void", 3.0f, 5, ErrorRose, "Flagged for evening retrospective", "Max: 2.0h", isError = true)
-                )
-            },
+            categoryBreakdowns = breakdowns,
             hourlyHeatmap = heatmapList
         )
     }
@@ -489,18 +523,23 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun loadPersistedProfile(): UserProfile {
+        val todayStr = dateFormat.format(Date())
+        val sprintStart = prefs.getString("user_sprint_start_date", todayStr) ?: todayStr
+        val sprintDays = prefs.getInt("user_sprint_target_days", 90)
+        val calculatedStreak = calculateSprintDayFromDate(sprintStart, sprintDays)
+
         return UserProfile(
             name = prefs.getString("user_name", "Sri") ?: "Sri",
             email = prefs.getString("user_email", "srimobile69@gmail.com") ?: "srimobile69@gmail.com",
-            tier = prefs.getString("user_tier", "Q4 PRO • Founder Track") ?: "Q4 PRO • Founder Track",
-            sprintGoalName = prefs.getString("user_sprint_goal_name", "Launch Full SaaS MVP & Acquire First 100 Paid Users") ?: "Launch Full SaaS MVP & Acquire First 100 Paid Users",
-            sprintStartDate = prefs.getString("user_sprint_start_date", "2026-10-10") ?: "2026-10-10",
-            sprintTargetDays = prefs.getInt("user_sprint_target_days", 90),
+            tier = prefs.getString("user_tier", "PRO • Founder Track") ?: "PRO • Founder Track",
+            sprintGoalName = prefs.getString("user_sprint_goal_name", "90-Day Sprint Objective") ?: "90-Day Sprint Objective",
+            sprintStartDate = sprintStart,
+            sprintTargetDays = sprintDays,
             dailyTargetHours = prefs.getFloat("user_target_hours", 8.0f),
             chronotype = prefs.getString("user_chronotype", "Day Owl (09:00 - 12:30 Peak)") ?: "Day Owl (09:00 - 12:30 Peak)",
-            activeStreakDays = prefs.getInt("user_streak", 14),
-            totalHoursLogged = prefs.getFloat("user_hours_logged", 128.5f),
-            executionRatePct = prefs.getFloat("user_exec_rate", 81.4f),
+            activeStreakDays = prefs.getInt("user_streak", calculatedStreak),
+            totalHoursLogged = prefs.getFloat("user_hours_logged", 0.0f),
+            executionRatePct = prefs.getFloat("user_exec_rate", 0.0f),
             hapticFeedback = prefs.getBoolean("user_haptic", true),
             autoRollInProgress = prefs.getBoolean("user_autoroll", true),
             strictMode = prefs.getBoolean("user_strict", true)
@@ -822,8 +861,9 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun jumpToToday() {
-        _selectedDate.value = "2026-10-23"
-        _selectedDisplayDate.value = "Wed, Oct 23"
+        val today = Date()
+        _selectedDate.value = dateFormat.format(today)
+        _selectedDisplayDate.value = displayDateFormat.format(today)
         _sprintDayInfo.value = "Sprint Day ${_sprintConfig.value.currentDay} • Cycle ${_sprintConfig.value.cycle}"
         viewModelScope.launch {
             repository.seedDefaultDataIfEmpty(_selectedDate.value)

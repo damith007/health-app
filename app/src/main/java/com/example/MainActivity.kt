@@ -101,6 +101,8 @@ fun ChronoApp(viewModel: ChronoViewModel) {
         topBar = {
             ChronoTopHeader(
                 currentTab = currentTab,
+                sprintDayTag = "D-${sprintConfig.currentDay}",
+                currentTimeLive = currentTimeLive,
                 unreadNotificationsCount = unreadNotificationsCount,
                 onNotificationsClick = { viewModel.openNotificationDialog() },
                 onProfileClick = { viewModel.openProfileDialog() }
@@ -169,7 +171,7 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                         displayDate = selectedDisplayDate,
                         sprintDayInfo = sprintDayInfo,
                         currentTimeLive = currentTimeLive,
-                        isToday = selectedDate == "2026-10-23",
+                        isToday = viewModel.isDateToday(selectedDate),
                         onPreviousDay = { viewModel.previousDay() },
                         onNextDay = { viewModel.nextDay() },
                         onJumpToNow = { viewModel.jumpToToday() },

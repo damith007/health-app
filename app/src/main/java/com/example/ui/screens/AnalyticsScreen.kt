@@ -95,6 +95,7 @@ fun AnalyticsScreen(
         item {
             AnalyticsHeaderSection(
                 selectedRange = selectedRange,
+                analyticsData = analyticsData,
                 onRangeChange = onRangeChange,
                 onFilterClick = onFilterClick,
                 onExportClick = onExportClick
@@ -142,6 +143,7 @@ fun AnalyticsScreen(
 @Composable
 fun AnalyticsHeaderSection(
     selectedRange: String,
+    analyticsData: com.example.data.model.RealtimeAnalytics = com.example.data.model.RealtimeAnalytics(),
     onRangeChange: (String) -> Unit,
     onFilterClick: () -> Unit = {},
     onExportClick: () -> Unit = {}
@@ -179,7 +181,7 @@ fun AnalyticsHeaderSection(
                     }
                 }
                 Text(
-                    text = "Day 14 of 90 • High Momentum Phase",
+                    text = "Day ${analyticsData.currentSprintDay} of ${analyticsData.totalSprintDays} • Sprint Horizon",
                     color = OnSurfaceVariant,
                     fontSize = 11.sp
                 )
@@ -1287,9 +1289,9 @@ fun TrajectoryForecastSection(analyticsData: com.example.data.model.RealtimeAnal
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Day 1 (Start)", color = OnSurfaceVariant, fontSize = 9.sp)
-                Text("Day 14 (Now)", color = SecondaryGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                Text("Day ${analyticsData.projectedCompletionDay} (Target Est.)", color = TertiaryCyan, fontSize = 9.sp)
-                Text("Day 90", color = OnSurfaceVariant, fontSize = 9.sp)
+                Text("Day ${analyticsData.currentSprintDay} (Now)", color = SecondaryGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text("Day ${analyticsData.projectedCompletionDay} (Est.)", color = TertiaryCyan, fontSize = 9.sp)
+                Text("Day ${analyticsData.totalSprintDays}", color = OnSurfaceVariant, fontSize = 9.sp)
             }
 
             // Bottom 3 Metric Columns

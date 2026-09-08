@@ -218,7 +218,7 @@ fun GoalsHeaderSection(
                         val subtitle = if (sprintConfig != null) {
                             "${sprintConfig.phaseTitle} • Day ${sprintConfig.currentDay} of ${sprintConfig.totalDays}"
                         } else {
-                            "Q4 Phase 1: Foundation • Day 14 of 90"
+                            "Sprint Cycle • Day 1 of 90"
                         }
                         Text(
                             text = subtitle,
@@ -279,7 +279,7 @@ fun GoalsHeaderSection(
             }
 
             // Overall sprint progress bar
-            val currentDay = sprintConfig?.currentDay ?: 14
+            val currentDay = sprintConfig?.currentDay ?: 1
             val totalDays = (sprintConfig?.totalDays ?: 90).coerceAtLeast(1)
             val progressFraction = (currentDay.toFloat() / totalDays.toFloat()).coerceIn(0f, 1f)
             val daysRemaining = (totalDays - currentDay).coerceAtLeast(0)

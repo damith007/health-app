@@ -358,8 +358,8 @@ class ChronoRepository(
                     startMinute = 0,
                     endHour = 18,
                     endMinute = 30,
-                    title = "Content Writing: 90-Day Challenge Log",
-                    description = "Draft Day 14 engineering dispatch on Substack + X breakdown",
+                    title = "Content Writing: Sprint Dispatch",
+                    description = "Draft sprint engineering dispatch on Substack + X breakdown",
                     categoryTag = "#Growth",
                     status = TaskStatus.PLANNED
                 ),
@@ -403,7 +403,7 @@ class ChronoRepository(
                     endHour = 23,
                     endMinute = 0,
                     title = "Daily Review, Journaling & Screen Cutoff",
-                    description = "Fill Day 14 retrospective score • Red lens glasses on",
+                    description = "Fill daily sprint retrospective score • Red lens glasses on",
                     categoryTag = "#Recovery",
                     status = TaskStatus.PLANNED
                 ),
@@ -428,35 +428,35 @@ class ChronoRepository(
                     title = "900h Deep Work Sprint",
                     category = "#DeepWork",
                     targetValue = 900,
-                    currentValue = 129,
+                    currentValue = 0,
                     unit = "Hours"
                 ),
                 GoalItem(
                     title = "Production Architecture Engine",
                     category = "#Code",
                     targetValue = 10,
-                    currentValue = 4,
+                    currentValue = 0,
                     unit = "Modules"
                 ),
                 GoalItem(
                     title = "Engineering Dispatch Series",
                     category = "#Growth",
                     targetValue = 12,
-                    currentValue = 3,
+                    currentValue = 0,
                     unit = "Articles"
                 ),
                 GoalItem(
                     title = "Zone-2 Cardio & Strength",
                     category = "#Fitness",
                     targetValue = 75,
-                    currentValue = 16,
+                    currentValue = 0,
                     unit = "Workouts"
                 ),
                 GoalItem(
                     title = "Zero Post-Lunch Unplanned Gap",
                     category = "#Routine",
                     targetValue = 90,
-                    currentValue = 12,
+                    currentValue = 0,
                     unit = "Days Clean"
                 )
             )
