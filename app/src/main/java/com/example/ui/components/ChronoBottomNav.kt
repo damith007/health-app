@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,8 +44,9 @@ fun ChronoBottomNav(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
             .background(SurfaceContainerLowest.copy(alpha = 0.95f))
+            .navigationBarsPadding()
+            .height(72.dp)
             .padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
