@@ -71,6 +71,7 @@ fun TodayOverviewMatrix(
     onNextDay: () -> Unit,
     onJumpToNow: () -> Unit,
     onSprintClick: () -> Unit = {},
+    onSyncRoutineTo90Days: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -100,7 +101,8 @@ fun TodayOverviewMatrix(
             sprintDayInfo = sprintDayInfo,
             onPreviousDay = onPreviousDay,
             onNextDay = onNextDay,
-            onJumpToNow = onJumpToNow
+            onJumpToNow = onJumpToNow,
+            onSyncRoutineTo90Days = onSyncRoutineTo90Days
         )
     }
 }
@@ -529,7 +531,8 @@ fun DateSwitcherRow(
     sprintDayInfo: String,
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
-    onJumpToNow: () -> Unit
+    onJumpToNow: () -> Unit,
+    onSyncRoutineTo90Days: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -590,30 +593,66 @@ fun DateSwitcherRow(
             }
         }
 
-        // Jump to Now Button
         Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(9999.dp))
-                .background(Primary.copy(alpha = 0.18f))
-                .clickable { onJumpToNow() }
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-                .testTag("jump_to_now_button"),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Schedule,
-                contentDescription = null,
-                tint = Primary,
-                modifier = Modifier.size(15.dp)
-            )
-            Text(
-                text = "JUMP TO NOW",
-                color = Primary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
-            )
+            if (onSyncRoutineTo90Days != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(9999.dp))
+                        .background(SurfaceContainerHigh)
+                        .clickable { onSyncRoutineTo90Days() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                        .testTag("sync_90d_routine_button"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Verified,
+                            contentDescription = "Sync 90d Routine",
+                            tint = SecondaryGreen,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            text = "90D ROUTINE",
+                            color = SecondaryGreen,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.3.sp
+                        )
+                    }
+                }
+            }
+
+            // Jump to Now Button
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(9999.dp))
+                    .background(Primary.copy(alpha = 0.18f))
+                    .clickable { onJumpToNow() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .testTag("jump_to_now_button"),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Schedule,
+                    contentDescription = null,
+                    tint = Primary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = "NOW (24h)",
+                    color = Primary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp
+                )
+            }
         }
     }
 }

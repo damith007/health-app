@@ -48,6 +48,7 @@ fun TodayGridScreen(
     onJumpToNow: () -> Unit,
     onSprintClick: () -> Unit = {},
     onSeedTemplate: () -> Unit = {},
+    onSyncRoutineTo90Days: () -> Unit = {},
     onStatusToggle: (TimeSlotTask) -> Unit,
     onStatusSelect: (TimeSlotTask, TaskStatus) -> Unit,
     onTaskClick: (TimeSlotTask) -> Unit,
@@ -90,7 +91,8 @@ fun TodayGridScreen(
                         }
                     }
                 },
-                onSprintClick = onSprintClick
+                onSprintClick = onSprintClick,
+                onSyncRoutineTo90Days = onSyncRoutineTo90Days
             )
         }
 

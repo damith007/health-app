@@ -227,7 +227,8 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         repository = ChronoRepository(db.taskDao(), db.goalDao())
 
         viewModelScope.launch {
-            repository.seedDefaultDataIfEmpty(_selectedDate.value)
+            val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+            repository.seedDefaultDataIfEmpty(_selectedDate.value, start, _sprintConfig.value.totalDays)
         }
 
         // Clock ticking coroutine
@@ -736,14 +737,33 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         _editingTask.value = null
     }
 
-    fun saveTask(task: TimeSlotTask) {
+    fun saveTask(task: TimeSlotTask, applyToAll90Days: Boolean = false) {
         viewModelScope.launch {
             if (task.id == 0L) {
                 repository.insertTask(task.copy(dateStr = _selectedDate.value))
             } else {
                 repository.updateTask(task)
             }
+            if (applyToAll90Days) {
+                val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+                repository.applySlotToAll90Days(
+                    baseTask = task,
+                    startDateStr = start,
+                    totalDays = _sprintConfig.value.totalDays
+                )
+            }
             dismissEditDialog()
+        }
+    }
+
+    fun syncDailyRoutineToAll90Days() {
+        viewModelScope.launch {
+            val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+            repository.syncDailyRoutineToAll90Days(
+                sourceDate = _selectedDate.value,
+                startDateStr = start,
+                totalDays = _sprintConfig.value.totalDays
+            )
         }
     }
 
@@ -756,7 +776,12 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
 
     fun seedSampleDayTemplate() {
         viewModelScope.launch {
-            repository.seedSampleDayTemplate(_selectedDate.value)
+            val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+            repository.syncDailyRoutineToAll90Days(
+                sourceDate = _selectedDate.value,
+                startDateStr = start,
+                totalDays = _sprintConfig.value.totalDays
+            )
         }
     }
 
@@ -866,7 +891,8 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         _selectedDisplayDate.value = displayDateFormat.format(today)
         _sprintDayInfo.value = "Sprint Day ${_sprintConfig.value.currentDay} • Cycle ${_sprintConfig.value.cycle}"
         viewModelScope.launch {
-            repository.seedDefaultDataIfEmpty(_selectedDate.value)
+            val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+            repository.seedDefaultDataIfEmpty(_selectedDate.value, start, _sprintConfig.value.totalDays)
         }
     }
 
@@ -879,7 +905,8 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
             _selectedDisplayDate.value = displayDateFormat.format(currentCalendar.time)
 
             viewModelScope.launch {
-                repository.seedDefaultDataIfEmpty(newDateStr)
+                val start = _userProfile.value.sprintStartDate.ifBlank { _selectedDate.value }
+                repository.seedDefaultDataIfEmpty(newDateStr, start, _sprintConfig.value.totalDays)
             }
         } catch (e: Exception) {
             // fallback

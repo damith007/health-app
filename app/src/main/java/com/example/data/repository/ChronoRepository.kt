@@ -6,13 +6,22 @@ import com.example.data.model.GoalItem
 import com.example.data.model.TaskStatus
 import com.example.data.model.TimeSlotTask
 import kotlinx.coroutines.flow.Flow
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class ChronoRepository(
     private val taskDao: TaskDao,
     private val goalDao: GoalDao
 ) {
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
     fun getTasksForDate(dateStr: String): Flow<List<TimeSlotTask>> =
         taskDao.getTasksForDate(dateStr)
+
+    suspend fun getTasksForDateOnce(dateStr: String): List<TimeSlotTask> =
+        taskDao.getTasksForDateOnce(dateStr)
 
     fun getAllTasks(): Flow<List<TimeSlotTask>> =
         taskDao.getAllTasks()
@@ -45,35 +54,35 @@ class ChronoRepository(
         goalDao.clearAllGoals()
         val defaultGoals = listOf(
             GoalItem(
-                title = "900h Deep Work Sprint",
+                title = "90-Day Sprint: 720h Deep Focus",
                 category = "#DeepWork",
-                targetValue = 900,
+                targetValue = 720,
                 currentValue = 0,
                 unit = "Hours"
             ),
             GoalItem(
-                title = "Production Architecture Engine",
+                title = "90-Day Sprint: 10 Architecture Engines",
                 category = "#Code",
                 targetValue = 10,
                 currentValue = 0,
                 unit = "Modules"
             ),
             GoalItem(
-                title = "Engineering Dispatch Series",
+                title = "90-Day Sprint: 12 Technical Dispatches",
                 category = "#Growth",
                 targetValue = 12,
                 currentValue = 0,
                 unit = "Articles"
             ),
             GoalItem(
-                title = "Zone-2 Cardio & Strength",
+                title = "90-Day Sprint: 75 Physical Conditioning",
                 category = "#Fitness",
                 targetValue = 75,
                 currentValue = 0,
                 unit = "Workouts"
             ),
             GoalItem(
-                title = "Zero Post-Lunch Unplanned Gap",
+                title = "90-Day Sprint: Zero Routine Leakage",
                 category = "#Routine",
                 targetValue = 90,
                 currentValue = 0,
@@ -83,8 +92,8 @@ class ChronoRepository(
         goalDao.insertGoals(defaultGoals)
     }
 
-    suspend fun seedSampleDayTemplate(targetDate: String) {
-        val sampleTasks = listOf(
+    fun getDailyRoutineTemplate(targetDate: String): List<TimeSlotTask> {
+        return listOf(
             TimeSlotTask(
                 dateStr = targetDate,
                 startHour = 0,
@@ -92,9 +101,9 @@ class ChronoRepository(
                 endHour = 6,
                 endMinute = 0,
                 title = "Night Rest & Sleep Recovery",
-                description = "Optimal restorative sleep cycle • Deep & REM tracking active",
+                description = "Optimal restorative sleep cycle in 24h cadence (00:00 - 06:00)",
                 categoryTag = "#Health",
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -103,9 +112,9 @@ class ChronoRepository(
                 endHour = 7,
                 endMinute = 0,
                 title = "Morning Routine & Sun Exposure",
-                description = "Electrolytes + 15m outdoor walk for circadian anchoring",
+                description = "Electrolytes + 15m outdoor walk for circadian anchoring (06:00 - 07:00)",
                 categoryTag = "#Routine",
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -114,9 +123,9 @@ class ChronoRepository(
                 endHour = 8,
                 endMinute = 30,
                 title = "Cardio & Physical Conditioning",
-                description = "Zone-2 steady running + kettlebell mobility session",
+                description = "Zone-2 steady running + kettlebell mobility session (07:00 - 08:30)",
                 categoryTag = "#Fitness",
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -125,9 +134,9 @@ class ChronoRepository(
                 endHour = 9,
                 endMinute = 0,
                 title = "Nutrition Fuel & Sprint Kickoff",
-                description = "Protein intake, review top 3 high-leverage milestones",
+                description = "Protein intake, review top 3 high-leverage milestones (08:30 - 09:00)",
                 categoryTag = "#LifeOps",
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -136,11 +145,11 @@ class ChronoRepository(
                 endHour = 12,
                 endMinute = 0,
                 title = "Deep Focus: Core Architecture",
-                description = "Deep execution block • Zero notifications & distraction free",
+                description = "Deep execution block • Zero notifications & distraction free (09:00 - 12:00)",
                 categoryTag = "#DeepWork",
                 secondaryTag = "#SprintPriority",
-                status = TaskStatus.COMPLETED,
-                outputNote = "Output: 3 Core Modules Implemented"
+                status = TaskStatus.PLANNED,
+                outputNote = "Target: High-Leverage Architecture Modules"
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -148,10 +157,10 @@ class ChronoRepository(
                 startMinute = 0,
                 endHour = 13,
                 endMinute = 0,
-                title = "Lunch & Walking Break",
-                description = "Nutritious meal + fresh air recovery",
+                title = "Lunch & Fasting Break",
+                description = "Nutritious meal + fresh air recovery (12:00 - 13:00)",
                 categoryTag = "#Health",
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -160,9 +169,9 @@ class ChronoRepository(
                 endHour = 15,
                 endMinute = 0,
                 title = "Engineering Operations & Code Review",
-                description = "Review Pull Requests, automated test runner audits",
+                description = "Review Pull Requests, automated test runner audits (13:00 - 15:00)",
                 categoryTag = "#Code",
-                status = TaskStatus.IN_PROGRESS
+                status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
                 dateStr = targetDate,
@@ -171,7 +180,7 @@ class ChronoRepository(
                 endHour = 17,
                 endMinute = 0,
                 title = "Feature Development & Integration",
-                description = "Full stack implementation of high-priority tickets",
+                description = "Full stack implementation of high-priority tickets (15:00 - 17:00)",
                 categoryTag = "#DeepWork",
                 status = TaskStatus.PLANNED
             ),
@@ -182,7 +191,7 @@ class ChronoRepository(
                 endHour = 18,
                 endMinute = 30,
                 title = "Sprint Documentation & Writing",
-                description = "Document system interfaces & update knowledge base",
+                description = "Document system interfaces & update sprint backlog (17:00 - 18:30)",
                 categoryTag = "#Growth",
                 status = TaskStatus.PLANNED
             ),
@@ -192,9 +201,9 @@ class ChronoRepository(
                 startMinute = 30,
                 endHour = 20,
                 endMinute = 0,
-                title = "Evening Recovery & Social Connection",
-                description = "Dinner & disconnected downtime",
-                categoryTag = "#Life",
+                title = "Evening Recovery & Nutrition",
+                description = "Wholesome dinner & disconnected downtime (18:30 - 20:00)",
+                categoryTag = "#LifeOps",
                 status = TaskStatus.PLANNED
             ),
             TimeSlotTask(
@@ -204,7 +213,7 @@ class ChronoRepository(
                 endHour = 22,
                 endMinute = 0,
                 title = "Side Project Innovation",
-                description = "Exploration of novel tools & micro-experiments",
+                description = "Exploration of novel tools & micro-experiments (20:00 - 22:00)",
                 categoryTag = "#SideProject",
                 status = TaskStatus.PLANNED
             ),
@@ -215,7 +224,7 @@ class ChronoRepository(
                 endHour = 23,
                 endMinute = 0,
                 title = "Daily Retrospective & Screen Shutdown",
-                description = "Review execution score, journal wins, plan tomorrow",
+                description = "Review execution score, journal wins, plan tomorrow (22:00 - 23:00)",
                 categoryTag = "#Recovery",
                 status = TaskStatus.PLANNED
             ),
@@ -226,234 +235,169 @@ class ChronoRepository(
                 endHour = 24,
                 endMinute = 0,
                 title = "Night Rest Preparation",
-                description = "Wind-down environment configured for sleep",
+                description = "Wind-down environment configured for sleep (23:00 - 24:00)",
                 categoryTag = "#SleepPrep",
                 status = TaskStatus.PLANNED
             )
         )
+    }
+
+    suspend fun seedSampleDayTemplate(targetDate: String) {
+        val sampleTasks = getDailyRoutineTemplate(targetDate)
         taskDao.insertTasks(sampleTasks)
     }
 
-    suspend fun seedDefaultDataIfEmpty(defaultDate: String) {
-        if (taskDao.getTaskCount() == 0) {
-            val initialTasks = listOf(
+    suspend fun syncDailyRoutineToAll90Days(
+        sourceDate: String,
+        startDateStr: String,
+        totalDays: Int = 90
+    ) {
+        val sourceTasks = taskDao.getTasksForDateOnce(sourceDate)
+        val templateToUse = if (sourceTasks.isNotEmpty()) sourceTasks else getDailyRoutineTemplate(sourceDate)
+
+        val cal = Calendar.getInstance()
+        val startDate = try {
+            dateFormat.parse(startDateStr) ?: Date()
+        } catch (e: Exception) {
+            Date()
+        }
+
+        val allGeneratedTasks = mutableListOf<TimeSlotTask>()
+
+        for (dayIndex in 0 until totalDays) {
+            cal.time = startDate
+            cal.add(Calendar.DAY_OF_YEAR, dayIndex)
+            val dayDateStr = dateFormat.format(cal.time)
+
+            // If it is the source date, keep existing task statuses, otherwise clone as template
+            if (dayDateStr == sourceDate && sourceTasks.isNotEmpty()) {
+                continue
+            }
+
+            // Remove existing for this date to replace with unified 90-day daily routine
+            taskDao.deleteTasksForDate(dayDateStr)
+
+            val dayTasks = templateToUse.map { task ->
                 TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 0,
-                    startMinute = 0,
-                    endHour = 6,
-                    endMinute = 0,
-                    title = "Night Rest & Deep Sleep Cycle",
-                    description = "Oura Score: 89 • Recovery target met (REM + Deep: 3.4h)",
-                    categoryTag = "#Health",
-                    status = TaskStatus.COMPLETED
-                ),
+                    id = 0L,
+                    dateStr = dayDateStr,
+                    startHour = task.startHour,
+                    startMinute = task.startMinute,
+                    endHour = task.endHour,
+                    endMinute = task.endMinute,
+                    title = task.title,
+                    description = task.description,
+                    categoryTag = task.categoryTag,
+                    secondaryTag = task.secondaryTag,
+                    status = TaskStatus.PLANNED,
+                    outputNote = task.outputNote,
+                    wastedMinutes = 0
+                )
+            }
+            allGeneratedTasks.addAll(dayTasks)
+        }
+
+        if (allGeneratedTasks.isNotEmpty()) {
+            taskDao.insertTasks(allGeneratedTasks)
+        }
+    }
+
+    suspend fun applySlotToAll90Days(
+        baseTask: TimeSlotTask,
+        startDateStr: String,
+        totalDays: Int = 90
+    ) {
+        val cal = Calendar.getInstance()
+        val startDate = try {
+            dateFormat.parse(startDateStr) ?: Date()
+        } catch (e: Exception) {
+            Date()
+        }
+
+        val slots = mutableListOf<TimeSlotTask>()
+        for (dayIndex in 0 until totalDays) {
+            cal.time = startDate
+            cal.add(Calendar.DAY_OF_YEAR, dayIndex)
+            val dayDateStr = dateFormat.format(cal.time)
+
+            if (dayDateStr == baseTask.dateStr) {
+                continue
+            }
+
+            slots.add(
                 TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 6,
-                    startMinute = 0,
-                    endHour = 7,
-                    endMinute = 0,
-                    title = "Morning Hydration & Sunlight Exposure",
-                    description = "750ml water with electrolytes + 15m outdoor walk",
-                    categoryTag = "#Routine",
-                    status = TaskStatus.COMPLETED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 7,
-                    startMinute = 0,
-                    endHour = 8,
-                    endMinute = 30,
-                    title = "HIIT Track Run & Kettlebell Complex",
-                    description = "5.2 km continuous run + 4 sets clean & presses",
-                    categoryTag = "#Fitness",
-                    status = TaskStatus.COMPLETED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 8,
-                    startMinute = 30,
-                    endHour = 9,
-                    endMinute = 0,
-                    title = "Protein Fuel & Daily Sprint Brief",
-                    description = "3 eggs + avocado shake, review top 3 needle-movers",
-                    categoryTag = "#LifeOps",
-                    status = TaskStatus.COMPLETED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 9,
-                    startMinute = 0,
-                    endHour = 11,
-                    endMinute = 0,
-                    title = "Core Engine Architecture & Refactor",
-                    description = "Zero-latency state synchronization layer implemented in Rust",
-                    categoryTag = "#DeepWork",
-                    secondaryTag = "#SaaS",
-                    status = TaskStatus.COMPLETED,
-                    outputNote = "Output: 124 LOC + 18 Unit Tests"
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 11,
-                    startMinute = 0,
-                    endHour = 12,
-                    endMinute = 0,
-                    title = "PR Merges & Database Schema Verification",
-                    description = "Approved 4 team PRs; resolved migration contention",
-                    categoryTag = "#Code",
-                    status = TaskStatus.COMPLETED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 12,
-                    startMinute = 0,
-                    endHour = 13,
-                    endMinute = 0,
-                    title = "Nutritional Fasting Break & Walk",
-                    description = "Low-carb bowl, 10m sunshine & breathwork",
-                    categoryTag = "#Health",
-                    status = TaskStatus.COMPLETED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 13,
-                    startMinute = 0,
-                    endHour = 14,
-                    endMinute = 0,
-                    title = "Social Media Rabbit Hole & Distraction",
-                    description = "Doomscrolling tech Twitter threads • Context switch penalty incurred",
-                    categoryTag = "#Unplanned",
-                    status = TaskStatus.WASTED,
-                    outputNote = "Impact: -12% Daily Focus Ratio",
-                    wastedMinutes = 45
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 14,
-                    startMinute = 0,
-                    endHour = 15,
-                    endMinute = 30,
-                    title = "Client Strategy Call & Demo Prep",
-                    description = "Counterparty conflict; moved to Thursday 10:00 AM slot",
-                    categoryTag = "#Revenue",
-                    status = TaskStatus.RESCHEDULED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 15,
-                    startMinute = 30,
-                    endHour = 17,
-                    endMinute = 0,
-                    title = "System Stress Testing & Bug Bounty",
-                    description = "Emulating 50k concurrent websockets on cluster 04. Auditing backpressure throttle queues.",
-                    categoryTag = "#Code",
-                    secondaryTag = "#SprintPriority",
-                    status = TaskStatus.IN_PROGRESS
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 17,
-                    startMinute = 0,
-                    endHour = 18,
-                    endMinute = 30,
-                    title = "Content Writing: Sprint Dispatch",
-                    description = "Draft sprint engineering dispatch on Substack + X breakdown",
-                    categoryTag = "#Growth",
-                    status = TaskStatus.PLANNED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 18,
-                    startMinute = 30,
-                    endHour = 19,
-                    endMinute = 30,
-                    title = "Evening Zone-2 Walk & Audio Book",
-                    description = "High Output Management (Chapters 5-7) • Recovery pace",
-                    categoryTag = "#Mindset",
-                    status = TaskStatus.PLANNED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 19,
-                    startMinute = 30,
-                    endHour = 20,
-                    endMinute = 30,
-                    title = "Dinner & Family Presence",
-                    description = "No screens policy • Wholesome dinner",
-                    categoryTag = "#Life",
-                    status = TaskStatus.PLANNED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 20,
-                    startMinute = 30,
-                    endHour = 22,
-                    endMinute = 0,
-                    title = "AI Agent Pipeline Integration",
-                    description = "Plug-in automated benchmark tests & prompt evaluation loop",
-                    categoryTag = "#SideProject",
-                    status = TaskStatus.PLANNED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 22,
-                    startMinute = 0,
-                    endHour = 23,
-                    endMinute = 0,
-                    title = "Daily Review, Journaling & Screen Cutoff",
-                    description = "Fill daily sprint retrospective score • Red lens glasses on",
-                    categoryTag = "#Recovery",
-                    status = TaskStatus.PLANNED
-                ),
-                TimeSlotTask(
-                    dateStr = defaultDate,
-                    startHour = 23,
-                    startMinute = 0,
-                    endHour = 24,
-                    endMinute = 0,
-                    title = "Target 8.0h Sleep Chamber Environment",
-                    description = "Thermostat set to 19°C • White noise generator running",
-                    categoryTag = "#SleepPrep",
-                    status = TaskStatus.PLANNED
+                    id = 0L,
+                    dateStr = dayDateStr,
+                    startHour = baseTask.startHour,
+                    startMinute = baseTask.startMinute,
+                    endHour = baseTask.endHour,
+                    endMinute = baseTask.endMinute,
+                    title = baseTask.title,
+                    description = baseTask.description,
+                    categoryTag = baseTask.categoryTag,
+                    secondaryTag = baseTask.secondaryTag,
+                    status = TaskStatus.PLANNED,
+                    outputNote = baseTask.outputNote,
+                    wastedMinutes = 0
                 )
             )
-            taskDao.insertTasks(initialTasks)
+        }
+
+        if (slots.isNotEmpty()) {
+            taskDao.insertTasks(slots)
+        }
+    }
+
+    suspend fun seedDefaultDataIfEmpty(
+        defaultDate: String,
+        startDateStr: String = defaultDate,
+        totalDays: Int = 90
+    ) {
+        val count = taskDao.getTaskCount()
+        if (count == 0) {
+            // Seed the 24-hour daily routine across all 90 days of the sprint
+            syncDailyRoutineToAll90Days(defaultDate, startDateStr, totalDays)
+        } else {
+            // Check if current date has tasks, if not seed it from routine template
+            val existingForDate = taskDao.getTasksForDateOnce(defaultDate)
+            if (existingForDate.isEmpty()) {
+                val routineTasks = getDailyRoutineTemplate(defaultDate)
+                taskDao.insertTasks(routineTasks)
+            }
         }
 
         if (goalDao.getGoalCount() == 0) {
             val initialGoals = listOf(
                 GoalItem(
-                    title = "900h Deep Work Sprint",
+                    title = "90-Day Sprint: 720h Deep Focus",
                     category = "#DeepWork",
-                    targetValue = 900,
+                    targetValue = 720,
                     currentValue = 0,
                     unit = "Hours"
                 ),
                 GoalItem(
-                    title = "Production Architecture Engine",
+                    title = "90-Day Sprint: 10 Architecture Engines",
                     category = "#Code",
                     targetValue = 10,
                     currentValue = 0,
                     unit = "Modules"
                 ),
                 GoalItem(
-                    title = "Engineering Dispatch Series",
+                    title = "90-Day Sprint: 12 Technical Dispatches",
                     category = "#Growth",
                     targetValue = 12,
                     currentValue = 0,
                     unit = "Articles"
                 ),
                 GoalItem(
-                    title = "Zone-2 Cardio & Strength",
+                    title = "90-Day Sprint: 75 Physical Conditioning",
                     category = "#Fitness",
                     targetValue = 75,
                     currentValue = 0,
                     unit = "Workouts"
                 ),
                 GoalItem(
-                    title = "Zero Post-Lunch Unplanned Gap",
+                    title = "90-Day Sprint: Zero Routine Leakage",
                     category = "#Routine",
                     targetValue = 90,
                     currentValue = 0,

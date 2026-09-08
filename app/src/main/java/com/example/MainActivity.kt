@@ -197,6 +197,7 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                         onJumpToNow = { viewModel.jumpToToday() },
                         onSprintClick = { viewModel.openSprintEditDialog() },
                         onSeedTemplate = { viewModel.seedSampleDayTemplate() },
+                        onSyncRoutineTo90Days = { viewModel.syncDailyRoutineToAll90Days() },
                         onStatusToggle = { viewModel.toggleTaskStatus(it) },
                         onStatusSelect = { task, status -> viewModel.setTaskStatus(task, status) },
                         onTaskClick = { viewModel.openEditTask(it) }
@@ -230,7 +231,7 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                 TaskEditDialog(
                     task = editingTask!!,
                     onDismiss = { viewModel.dismissEditDialog() },
-                    onSave = { viewModel.saveTask(it) },
+                    onSave = { task, applyToAll90Days -> viewModel.saveTask(task, applyToAll90Days) },
                     onDelete = { viewModel.deleteTask(it) }
                 )
             }

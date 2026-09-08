@@ -1,6 +1,7 @@
 package com.example.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -20,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,6 +33,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -65,7 +73,7 @@ import com.example.ui.theme.TertiaryCyan
 fun TaskEditDialog(
     task: TimeSlotTask,
     onDismiss: () -> Unit,
-    onSave: (TimeSlotTask) -> Unit,
+    onSave: (TimeSlotTask, Boolean) -> Unit,
     onDelete: (TimeSlotTask) -> Unit
 ) {
     var title by remember { mutableStateOf(task.title) }
@@ -78,11 +86,24 @@ fun TaskEditDialog(
     var endHour by remember { mutableIntStateOf(task.endHour) }
     var endMinute by remember { mutableIntStateOf(task.endMinute) }
     var wastedMinutes by remember { mutableIntStateOf(task.wastedMinutes) }
+    var applyToAll90Days by remember { mutableStateOf(false) }
 
     val categories = listOf(
         "#DeepWork", "#Code", "#Health", "#Fitness",
         "#Routine", "#LifeOps", "#Growth", "#Mindset",
         "#Revenue", "#SideProject", "#Recovery", "#SleepPrep", "#Unplanned"
+    )
+
+    val quick24HourSlots = listOf(
+        Pair(0, 6) to "00:00 - 06:00 Rest",
+        Pair(6, 7) to "06:00 - 07:00 Wake",
+        Pair(7, 9) to "07:00 - 09:00 Fitness",
+        Pair(9, 12) to "09:00 - 12:00 DeepWork",
+        Pair(12, 13) to "12:00 - 13:00 Lunch",
+        Pair(13, 17) to "13:00 - 17:00 Execution",
+        Pair(17, 19) to "17:00 - 19:00 Growth",
+        Pair(19, 22) to "19:00 - 22:00 Life & Side",
+        Pair(22, 24) to "22:00 - 24:00 Review & Sleep"
     )
 
     Dialog(onDismissRequest = onDismiss) {
@@ -158,14 +179,56 @@ fun TaskEditDialog(
                     shape = RoundedCornerShape(12.dp)
                 )
 
-                // Time Interval Pickers
+                // 24-Hour Quick Presets
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "24-Hour Routine Presets",
+                        color = OnSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(quick24HourSlots) { (hours, label) ->
+                            val isMatch = startHour == hours.first && endHour == hours.second
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isMatch) Primary.copy(alpha = 0.25f) else SurfaceContainer)
+                                    .border(
+                                        width = if (isMatch) 1.dp else 0.dp,
+                                        color = if (isMatch) Primary else Color.Transparent,
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                    .clickable {
+                                        startHour = hours.first
+                                        startMinute = 0
+                                        endHour = hours.second
+                                        endMinute = 0
+                                    }
+                                    .padding(horizontal = 8.dp, vertical = 5.dp)
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isMatch) Primary else OnSurfaceVariant,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isMatch) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Time Interval Pickers (24-Hour Format)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Start Time",
+                            text = "Start Time (24h)",
                             color = OnSurfaceVariant,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
@@ -210,7 +273,7 @@ fun TaskEditDialog(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "End Time",
+                            text = "End Time (24h)",
                             color = OnSurfaceVariant,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
@@ -251,6 +314,61 @@ fun TaskEditDialog(
                                 }
                             }
                         }
+                    }
+                }
+
+                // 90-Day Sprint Routine Sync Toggle
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable { applyToAll90Days = !applyToAll90Days },
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (applyToAll90Days) Primary.copy(alpha = 0.15f) else SurfaceContainer
+                    ),
+                    border = if (applyToAll90Days) androidx.compose.foundation.BorderStroke(1.dp, Primary) else null
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Repeat,
+                                    contentDescription = null,
+                                    tint = if (applyToAll90Days) Primary else OnSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Sync across 90-Day Sprint Routine",
+                                    color = if (applyToAll90Days) Primary else OnSurface,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = "Applies this 24h slot to all 90 days of the sprint cycle",
+                                color = OnSurfaceVariant,
+                                fontSize = 10.sp
+                            )
+                        }
+                        Switch(
+                            checked = applyToAll90Days,
+                            onCheckedChange = { applyToAll90Days = it },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = OnPrimary,
+                                checkedTrackColor = Primary,
+                                uncheckedThumbColor = OnSurfaceVariant,
+                                uncheckedTrackColor = SurfaceContainerHighest
+                            )
+                        )
                     }
                 }
 
@@ -409,7 +527,8 @@ fun TaskEditDialog(
                                         endHour = endHour,
                                         endMinute = endMinute,
                                         wastedMinutes = if (selectedStatus == TaskStatus.WASTED) 45 else 0
-                                    )
+                                    ),
+                                    applyToAll90Days
                                 )
                             }
                         },
