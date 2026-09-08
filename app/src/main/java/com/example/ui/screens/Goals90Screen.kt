@@ -24,10 +24,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.GoalItem
+import com.example.ui.SprintConfig
 import com.example.ui.theme.OnPrimary
 import com.example.ui.theme.OnSecondary
 import com.example.ui.theme.OnSurface
@@ -58,8 +61,11 @@ import com.example.ui.theme.TertiaryCyan
 @Composable
 fun Goals90Screen(
     goals: List<GoalItem>,
+    sprintConfig: SprintConfig? = null,
+    onSprintClick: () -> Unit = {},
     onUpdateGoal: (GoalItem) -> Unit,
     onSetNewGoal: () -> Unit,
+    onResetGoals: () -> Unit = {},
     onEditGoal: (GoalItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -85,7 +91,12 @@ fun Goals90Screen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            GoalsHeaderSection(onSetNewGoal = onSetNewGoal)
+            GoalsHeaderSection(
+                sprintConfig = sprintConfig,
+                onSprintClick = onSprintClick,
+                onSetNewGoal = onSetNewGoal,
+                onResetGoals = onResetGoals
+            )
         }
 
         // Category Filter Chips
@@ -144,7 +155,12 @@ fun Goals90Screen(
 }
 
 @Composable
-fun GoalsHeaderSection(onSetNewGoal: () -> Unit) {
+fun GoalsHeaderSection(
+    sprintConfig: SprintConfig? = null,
+    onSprintClick: () -> Unit = {},
+    onSetNewGoal: () -> Unit,
+    onResetGoals: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -160,7 +176,12 @@ fun GoalsHeaderSection(onSetNewGoal: () -> Unit) {
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { onSprintClick() }
+                        .padding(vertical = 2.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -177,40 +198,83 @@ fun GoalsHeaderSection(onSetNewGoal: () -> Unit) {
                         )
                     }
                     Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "90-Day Sprint Objectives",
+                                color = OnSurface,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Sprint",
+                                tint = Primary.copy(alpha = 0.6f),
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                        val subtitle = if (sprintConfig != null) {
+                            "${sprintConfig.phaseTitle} • Day ${sprintConfig.currentDay} of ${sprintConfig.totalDays}"
+                        } else {
+                            "Q4 Phase 1: Foundation • Day 14 of 90"
+                        }
                         Text(
-                            text = "90-Day Sprint Objectives",
-                            color = OnSurface,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Q4 Phase 1: Foundation • Day 14 of 90",
+                            text = subtitle,
                             color = OnSurfaceVariant,
                             fontSize = 11.sp
                         )
                     }
                 }
 
-                Button(
-                    onClick = onSetNewGoal,
-                    modifier = Modifier.testTag("set_new_goal_button"),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Primary,
-                        contentColor = OnPrimary
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Text(
-                        text = "Set Goal",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    // Reset Goals button
+                    OutlinedButton(
+                        onClick = onResetGoals,
+                        modifier = Modifier.testTag("reset_goals_button"),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.RestartAlt,
+                            contentDescription = "Reset Goals",
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.size(4.dp))
+                        Text(
+                            text = "Reset",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    // Set Goal button
+                    Button(
+                        onClick = onSetNewGoal,
+                        modifier = Modifier.testTag("set_new_goal_button"),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary,
+                            contentColor = OnPrimary
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.size(2.dp))
+                        Text(
+                            text = "Set Goal",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

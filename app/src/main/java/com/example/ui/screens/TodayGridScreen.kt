@@ -42,6 +42,7 @@ fun TodayGridScreen(
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
     onJumpToNow: () -> Unit,
+    onSprintClick: () -> Unit = {},
     onStatusToggle: (TimeSlotTask) -> Unit,
     onStatusSelect: (TimeSlotTask, TaskStatus) -> Unit,
     onTaskClick: (TimeSlotTask) -> Unit,
@@ -83,7 +84,8 @@ fun TodayGridScreen(
                             listState.animateScrollToItem((activeIndex + 1).coerceAtLeast(0))
                         }
                     }
-                }
+                },
+                onSprintClick = onSprintClick
             )
         }
 

@@ -38,6 +38,51 @@ class ChronoRepository(
     suspend fun deleteGoal(goal: GoalItem) =
         goalDao.deleteGoal(goal)
 
+    suspend fun resetAllGoalsProgress() =
+        goalDao.resetAllGoalsProgress()
+
+    suspend fun resetGoalsToSprintDefaults() {
+        goalDao.clearAllGoals()
+        val defaultGoals = listOf(
+            GoalItem(
+                title = "900h Deep Work Sprint",
+                category = "#DeepWork",
+                targetValue = 900,
+                currentValue = 0,
+                unit = "Hours"
+            ),
+            GoalItem(
+                title = "Production Architecture Engine",
+                category = "#Code",
+                targetValue = 10,
+                currentValue = 0,
+                unit = "Modules"
+            ),
+            GoalItem(
+                title = "Engineering Dispatch Series",
+                category = "#Growth",
+                targetValue = 12,
+                currentValue = 0,
+                unit = "Articles"
+            ),
+            GoalItem(
+                title = "Zone-2 Cardio & Strength",
+                category = "#Fitness",
+                targetValue = 75,
+                currentValue = 0,
+                unit = "Workouts"
+            ),
+            GoalItem(
+                title = "Zero Post-Lunch Unplanned Gap",
+                category = "#Routine",
+                targetValue = 90,
+                currentValue = 0,
+                unit = "Days Clean"
+            )
+        )
+        goalDao.insertGoals(defaultGoals)
+    }
+
     suspend fun seedDefaultDataIfEmpty(defaultDate: String) {
         if (taskDao.getTaskCount() == 0) {
             val initialTasks = listOf(

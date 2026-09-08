@@ -31,6 +31,15 @@ enum class ChronoTab(val title: String) {
     ANALYTICS("Analytics")
 }
 
+data class SprintConfig(
+    val currentDay: Int = 14,
+    val totalDays: Int = 90,
+    val cycle: Int = 1,
+    val status: String = "On Track",
+    val targetPercent: Int = 100,
+    val phaseTitle: String = "Phase 1: Foundation"
+)
+
 data class DailySummary(
     val activeHours: Float = 14.0f,
     val missedHours: Float = 2.0f,
@@ -38,7 +47,11 @@ data class DailySummary(
     val plannedHours: Float = 7.0f,
     val dailyScorePercent: Int = 78,
     val sprintDay: Int = 14,
-    val totalSprintDays: Int = 90
+    val totalSprintDays: Int = 90,
+    val sprintStatus: String = "On Track",
+    val sprintTargetPercent: Int = 100,
+    val sprintCycle: Int = 1,
+    val sprintPhase: String = "Phase 1: Foundation"
 )
 
 class ChronoViewModel(application: Application) : AndroidViewModel(application) {
@@ -49,6 +62,23 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
 
     private val currentCalendar = Calendar.getInstance()
 
+    private fun loadPersistedSprintConfig(): SprintConfig {
+        return SprintConfig(
+            currentDay = prefs.getInt("sprint_day", 14),
+            totalDays = prefs.getInt("sprint_total_days", 90),
+            cycle = prefs.getInt("sprint_cycle", 1),
+            status = prefs.getString("sprint_status", "On Track") ?: "On Track",
+            targetPercent = prefs.getInt("sprint_target_percent", 100),
+            phaseTitle = prefs.getString("sprint_phase", "Phase 1: Foundation") ?: "Phase 1: Foundation"
+        )
+    }
+
+    private val _sprintConfig = MutableStateFlow(loadPersistedSprintConfig())
+    val sprintConfig: StateFlow<SprintConfig> = _sprintConfig.asStateFlow()
+
+    private val _showSprintEditDialog = MutableStateFlow(false)
+    val showSprintEditDialog: StateFlow<Boolean> = _showSprintEditDialog.asStateFlow()
+
     // Default to Wed, Oct 23 2026 or today's date
     private val _selectedDate = MutableStateFlow("2026-10-23")
     val selectedDate: StateFlow<String> = _selectedDate.asStateFlow()
@@ -56,7 +86,9 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
     private val _selectedDisplayDate = MutableStateFlow("Wed, Oct 23")
     val selectedDisplayDate: StateFlow<String> = _selectedDisplayDate.asStateFlow()
 
-    private val _sprintDayInfo = MutableStateFlow("Sprint Day 14 • Cycle 1")
+    private val _sprintDayInfo = MutableStateFlow(
+        "Sprint Day ${loadPersistedSprintConfig().currentDay} • Cycle ${loadPersistedSprintConfig().cycle}"
+    )
     val sprintDayInfo: StateFlow<String> = _sprintDayInfo.asStateFlow()
 
     private val _currentTab = MutableStateFlow(ChronoTab.TODAY_GRID)
@@ -75,6 +107,9 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _showGoalEditDialog = MutableStateFlow(false)
     val showGoalEditDialog: StateFlow<Boolean> = _showGoalEditDialog.asStateFlow()
+
+    private val _showResetGoalsDialog = MutableStateFlow(false)
+    val showResetGoalsDialog: StateFlow<Boolean> = _showResetGoalsDialog.asStateFlow()
 
     // Profile Dialog & State
     private val _showProfileDialog = MutableStateFlow(false)
@@ -178,8 +213,8 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         initialValue = emptyList()
     )
 
-    val dailySummary: StateFlow<DailySummary> = tasks.combine(_selectedDate) { taskList, _ ->
-        calculateSummary(taskList)
+    val dailySummary: StateFlow<DailySummary> = combine(tasks, _selectedDate, _sprintConfig) { taskList, _, sprint ->
+        calculateSummary(taskList, sprint)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -247,9 +282,24 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         _notifications.value = emptyList()
     }
 
-    private fun calculateSummary(taskList: List<TimeSlotTask>): DailySummary {
+    private fun calculateSummary(
+        taskList: List<TimeSlotTask>,
+        sprint: SprintConfig = _sprintConfig.value
+    ): DailySummary {
         if (taskList.isEmpty()) {
-            return DailySummary(0f, 0f, 0f, 0f, 0, 14, 90)
+            return DailySummary(
+                activeHours = 0f,
+                missedHours = 0f,
+                wastedHours = 0f,
+                plannedHours = 0f,
+                dailyScorePercent = 0,
+                sprintDay = sprint.currentDay,
+                totalSprintDays = sprint.totalDays,
+                sprintStatus = sprint.status,
+                sprintTargetPercent = sprint.targetPercent,
+                sprintCycle = sprint.cycle,
+                sprintPhase = sprint.phaseTitle
+            )
         }
 
         var activeMin = 0
@@ -288,8 +338,12 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
             wastedHours = if (wastedH > 0) (Math.round(wastedH * 10) / 10f) else 1.0f,
             plannedHours = if (plannedH > 0) (Math.round(plannedH * 10) / 10f) else 7.0f,
             dailyScorePercent = if (recordedTotal > 0) score else 78,
-            sprintDay = 14,
-            totalSprintDays = 90
+            sprintDay = sprint.currentDay,
+            totalSprintDays = sprint.totalDays,
+            sprintStatus = sprint.status,
+            sprintTargetPercent = sprint.targetPercent,
+            sprintCycle = sprint.cycle,
+            sprintPhase = sprint.phaseTitle
         )
     }
 
@@ -428,6 +482,50 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    fun openResetGoalsDialog() {
+        _showResetGoalsDialog.value = true
+    }
+
+    fun dismissResetGoalsDialog() {
+        _showResetGoalsDialog.value = false
+    }
+
+    fun resetGoalsProgressOnly() {
+        viewModelScope.launch {
+            repository.resetAllGoalsProgress()
+            dismissResetGoalsDialog()
+        }
+    }
+
+    fun resetGoalsToSprintDefaults() {
+        viewModelScope.launch {
+            repository.resetGoalsToSprintDefaults()
+            dismissResetGoalsDialog()
+        }
+    }
+
+    fun openSprintEditDialog() {
+        _showSprintEditDialog.value = true
+    }
+
+    fun dismissSprintEditDialog() {
+        _showSprintEditDialog.value = false
+    }
+
+    fun updateSprintConfig(config: SprintConfig) {
+        _sprintConfig.value = config
+        prefs.edit()
+            .putInt("sprint_day", config.currentDay)
+            .putInt("sprint_total_days", config.totalDays)
+            .putInt("sprint_cycle", config.cycle)
+            .putString("sprint_status", config.status)
+            .putInt("sprint_target_percent", config.targetPercent)
+            .putString("sprint_phase", config.phaseTitle)
+            .apply()
+        _sprintDayInfo.value = "Sprint Day ${config.currentDay} • Cycle ${config.cycle}"
+        _showSprintEditDialog.value = false
+    }
+
     fun previousDay() {
         adjustDay(-1)
     }
@@ -439,7 +537,7 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
     fun jumpToToday() {
         _selectedDate.value = "2026-10-23"
         _selectedDisplayDate.value = "Wed, Oct 23"
-        _sprintDayInfo.value = "Sprint Day 14 • Cycle 1"
+        _sprintDayInfo.value = "Sprint Day ${_sprintConfig.value.currentDay} • Cycle ${_sprintConfig.value.cycle}"
         viewModelScope.launch {
             repository.seedDefaultDataIfEmpty(_selectedDate.value)
         }
@@ -452,8 +550,6 @@ class ChronoViewModel(application: Application) : AndroidViewModel(application) 
             val newDateStr = dateFormat.format(currentCalendar.time)
             _selectedDate.value = newDateStr
             _selectedDisplayDate.value = displayDateFormat.format(currentCalendar.time)
-            val dayOfYear = currentCalendar.get(Calendar.DAY_OF_YEAR) % 90 + 1
-            _sprintDayInfo.value = "Sprint Day $dayOfYear • Cycle 1"
 
             viewModelScope.launch {
                 repository.seedDefaultDataIfEmpty(newDateStr)

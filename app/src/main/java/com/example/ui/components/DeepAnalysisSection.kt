@@ -15,10 +15,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.TipsAndUpdates
 import androidx.compose.material3.Icon
@@ -305,7 +305,7 @@ fun DeepAnalysisSection(
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Icon(
-                                                imageVector = Icons.Default.KeyboardArrowRight,
+                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                                 contentDescription = null,
                                                 tint = OnPrimary,
                                                 modifier = Modifier.size(14.dp)

@@ -32,6 +32,8 @@ import com.example.ui.components.GoalEditDialog
 import com.example.ui.components.MetricFilterDialog
 import com.example.ui.components.NotificationDialog
 import com.example.ui.components.ProfileDialog
+import com.example.ui.components.ResetGoalsDialog
+import com.example.ui.components.SprintEditDialog
 import com.example.ui.components.TaskEditDialog
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.Goals90Screen
@@ -71,6 +73,7 @@ fun ChronoApp(viewModel: ChronoViewModel) {
 
     val showGoalEditDialog by viewModel.showGoalEditDialog.collectAsStateWithLifecycle()
     val editingGoal by viewModel.editingGoal.collectAsStateWithLifecycle()
+    val showResetGoalsDialog by viewModel.showResetGoalsDialog.collectAsStateWithLifecycle()
 
     val showProfileDialog by viewModel.showProfileDialog.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
@@ -82,6 +85,9 @@ fun ChronoApp(viewModel: ChronoViewModel) {
     val showExportDialog by viewModel.showExportDialog.collectAsStateWithLifecycle()
     val showFilterDialog by viewModel.showFilterDialog.collectAsStateWithLifecycle()
     val filterSettings by viewModel.filterSettings.collectAsStateWithLifecycle()
+
+    val showSprintEditDialog by viewModel.showSprintEditDialog.collectAsStateWithLifecycle()
+    val sprintConfig by viewModel.sprintConfig.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = Modifier
@@ -160,6 +166,7 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                         onPreviousDay = { viewModel.previousDay() },
                         onNextDay = { viewModel.nextDay() },
                         onJumpToNow = { viewModel.jumpToToday() },
+                        onSprintClick = { viewModel.openSprintEditDialog() },
                         onStatusToggle = { viewModel.toggleTaskStatus(it) },
                         onStatusSelect = { task, status -> viewModel.setTaskStatus(task, status) },
                         onTaskClick = { viewModel.openEditTask(it) }
@@ -168,8 +175,11 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                 ChronoTab.GOALS_90 -> {
                     Goals90Screen(
                         goals = goals,
+                        sprintConfig = sprintConfig,
+                        onSprintClick = { viewModel.openSprintEditDialog() },
                         onUpdateGoal = { viewModel.updateGoal(it) },
                         onSetNewGoal = { viewModel.openSetNewGoal() },
+                        onResetGoals = { viewModel.openResetGoalsDialog() },
                         onEditGoal = { viewModel.openEditGoal(it) }
                     )
                 }
@@ -238,6 +248,28 @@ fun ChronoApp(viewModel: ChronoViewModel) {
                     currentSettings = filterSettings,
                     onDismiss = { viewModel.dismissFilterDialog() },
                     onApply = { viewModel.applyFilterSettings(it) }
+                )
+            }
+
+            // Reset 90-Day Goals Dialog
+            if (showResetGoalsDialog) {
+                ResetGoalsDialog(
+                    onDismiss = { viewModel.dismissResetGoalsDialog() },
+                    onResetProgressOnly = { viewModel.resetGoalsProgressOnly() },
+                    onResetToSprintDefaults = { viewModel.resetGoalsToSprintDefaults() }
+                )
+            }
+
+            // Sprint Tracker Calibration Dialog
+            if (showSprintEditDialog) {
+                SprintEditDialog(
+                    currentConfig = sprintConfig,
+                    onDismiss = { viewModel.dismissSprintEditDialog() },
+                    onSave = { updatedConfig -> viewModel.updateSprintConfig(updatedConfig) },
+                    onNavigateToGoals = {
+                        viewModel.dismissSprintEditDialog()
+                        viewModel.selectTab(ChronoTab.GOALS_90)
+                    }
                 )
             }
         }

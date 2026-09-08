@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Verified
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.ui.DailySummary
+import com.example.ui.theme.AmberWarning
 import com.example.ui.theme.ErrorContainer
 import com.example.ui.theme.ErrorRose
 import com.example.ui.theme.OnPrimary
@@ -68,6 +70,7 @@ fun TodayOverviewMatrix(
     onPreviousDay: () -> Unit,
     onNextDay: () -> Unit,
     onJumpToNow: () -> Unit,
+    onSprintClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -77,10 +80,16 @@ fun TodayOverviewMatrix(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // 1. Top Identity Pill & Sprint Banner
-        SprintBannerCard()
+        SprintBannerCard(
+            summary = summary,
+            onSprintClick = onSprintClick
+        )
 
         // 2. Dual Metric Cards (90-Day Sprint Gauge & Daily Score)
-        DualMetricRow(summary)
+        DualMetricRow(
+            summary = summary,
+            onSprintClick = onSprintClick
+        )
 
         // 3. Execution Status Distribution Strip
         ExecutionStatusStrip(summary)
@@ -97,12 +106,17 @@ fun TodayOverviewMatrix(
 }
 
 @Composable
-fun SprintBannerCard() {
+fun SprintBannerCard(
+    summary: DailySummary,
+    onSprintClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(SurfaceContainerLow)
+            .clickable { onSprintClick() }
+            .testTag("sprint_banner_card")
             .padding(horizontal = 10.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -143,15 +157,16 @@ fun SprintBannerCard() {
                             .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
                         Text(
-                            text = "Q4 PRO",
+                            text = "CYCLE ${summary.sprintCycle}",
                             color = Primary,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
+                val daysRemaining = (summary.totalSprintDays - summary.sprintDay).coerceAtLeast(0)
                 Text(
-                    text = "Phase 1: Foundation • 16d remaining",
+                    text = "${summary.sprintPhase} • ${daysRemaining}d remaining",
                     color = OnSurfaceVariant,
                     fontSize = 11.sp
                 )
@@ -179,7 +194,10 @@ fun SprintBannerCard() {
 }
 
 @Composable
-fun DualMetricRow(summary: DailySummary) {
+fun DualMetricRow(
+    summary: DailySummary,
+    onSprintClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -190,6 +208,8 @@ fun DualMetricRow(summary: DailySummary) {
                 .weight(1f)
                 .clip(RoundedCornerShape(16.dp))
                 .background(SurfaceContainer)
+                .clickable { onSprintClick() }
+                .testTag("sprint_gauge_card")
                 .padding(12.dp)
         ) {
             Column(
@@ -200,13 +220,24 @@ fun DualMetricRow(summary: DailySummary) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "90-DAY SPRINT",
-                        color = OnSurfaceVariant,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "90-DAY SPRINT",
+                            color = OnSurfaceVariant,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Sprint",
+                            tint = Primary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
                     Icon(
                         imageVector = Icons.Default.Flag,
                         contentDescription = "Sprint Target",
@@ -214,6 +245,10 @@ fun DualMetricRow(summary: DailySummary) {
                         modifier = Modifier.size(16.dp)
                     )
                 }
+
+                val safeTotal = summary.totalSprintDays.coerceAtLeast(1)
+                val progressFraction = (summary.sprintDay.toFloat() / safeTotal.toFloat()).coerceIn(0f, 1f)
+                val progressPercent = (progressFraction * 100).toInt()
 
                 Row(
                     modifier = Modifier
@@ -240,8 +275,8 @@ fun DualMetricRow(summary: DailySummary) {
                                 style = Stroke(strokeWidth)
                             )
 
-                            // Progress Arc (15% = 54 degrees)
-                            val progressSweep = 360f * (summary.sprintDay.toFloat() / summary.totalSprintDays.toFloat())
+                            // Progress Arc
+                            val progressSweep = 360f * progressFraction
                             drawArc(
                                 color = Primary,
                                 startAngle = -90f,
@@ -253,7 +288,7 @@ fun DualMetricRow(summary: DailySummary) {
                             )
                         }
                         Text(
-                            text = "${((summary.sprintDay.toFloat() / summary.totalSprintDays.toFloat()) * 100).toInt()}%",
+                            text = "$progressPercent%",
                             color = OnSurface,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -281,13 +316,18 @@ fun DualMetricRow(summary: DailySummary) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Target: 100%",
+                        text = "Target: ${summary.sprintTargetPercent}%",
                         color = OnSurfaceVariant,
                         fontSize = 10.sp
                     )
                     Text(
-                        text = "On Track",
-                        color = SecondaryGreen,
+                        text = summary.sprintStatus,
+                        color = when (summary.sprintStatus) {
+                            "Ahead of Pace" -> TertiaryCyan
+                            "Needs Focus" -> AmberWarning
+                            "Behind" -> ErrorRose
+                            else -> SecondaryGreen
+                        },
                         fontSize = 10.sp,
                         fontWeight = FontWeight.SemiBold
                     )

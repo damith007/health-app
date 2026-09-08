@@ -51,6 +51,12 @@ interface GoalDao {
     @Delete
     suspend fun deleteGoal(goal: GoalItem)
 
+    @Query("DELETE FROM goals_90")
+    suspend fun clearAllGoals()
+
+    @Query("UPDATE goals_90 SET currentValue = 0, isCompleted = 0")
+    suspend fun resetAllGoalsProgress()
+
     @Query("SELECT COUNT(*) FROM goals_90")
     suspend fun getGoalCount(): Int
 }
